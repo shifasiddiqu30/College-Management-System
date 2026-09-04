@@ -1,0 +1,1555 @@
+import bcrypt from 'bcryptjs';
+import { db, queryAll, queryOne, execute } from '../config/db.js';
+import { ROLES, USER_STATUS, CLASSROOM_STATUS, CLASSROOM_TYPES, ACADEMIC_YEARS, DIVISIONS, DEPARTMENTS } from '../config/constants.js';
+
+// Helper: Generate unique IDs
+function generateId(prefix = 'id') {
+  return `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+}
+
+// Helper: Validate email format
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email?.trim() || '');
+}
+
+/**
+ * Admin Dashboard Stats
+ * GET /api/admin/dashboard-stats
+ */
+export async function getAdminDashboardStats(req, res, next) {
+  try {
+    const totalStudents = queryOne('SELECT COUNT(*) as count FROM users WHERE role = ?', [ROLES.STUDENT])?.count || 0;
+    const totalFaculty = queryOne('SELECT COUNT(*) as count FROM users WHERE role = ?', [ROLES.FACULTY])?.count || 0;
+    const totalClassrooms = queryOne('SELECT COUNT(*) as count FROM classrooms')?.count || 0;
+    const totalActiveRooms = queryOne('SELECT COUNT(*) as count FROM classrooms WHERE status = ?', [CLASSROOM_STATUS.ACTIVE])?.count || 0;
+    const totalDepartments = queryOne('SELECT COUNT(*) as count FROM departments')?.count || 0;
+    const totalClasses = queryOne('SELECT COUNT(*) as count FROM classes')?.count || 0;
+    const totalTimetableSlots = queryOne('SELECT COUNT(*) as count FROM timetables')?.count || 0;
+
+    // Recently added students (limit 5)
+    const recentStudents = queryAll(`
+      SELECT id, name, email, department, year, division, roll_number as rollNumber, status, created_at as createdAt
+      FROM users 
+      WHERE role = ?
+      ORDER BY datetime(created_at) DESC, id DESC
+      LIMIT 5
+    `, [ROLES.STUDENT]);
+
+    // Recently added faculty (limit 5)
+    const rawFaculty = queryAll(`
+      SELECT id, name, email, department, assigned_subjects, assigned_classes, status, created_at as createdAt
+      FROM users 
+      WHERE role = ?
+      ORDER BY datetime(created_at) DESC, id DESC
+      LIMIT 5
+    `, [ROLES.FACULTY]);
+
+    const recentFaculty = rawFaculty.map(f => {
+      let assignedSubjects = [];
+      let assignedClasses = [];
+      try {
+        if (f.assigned_subjects) assignedSubjects = JSON.parse(f.assigned_subjects);
+        if (f.assigned_classes) assignedClasses = JSON.parse(f.assigned_classes);
+      } catch (e) {
+        // fallback
+      }
+      return {
+        id: f.id,
+        name: f.name,
+        email: f.email,
+        department: f.department,
+        assignedSubjects,
+        assignedClasses,
+        status: f.status,
+        createdAt: f.createdAt
+      };
+    });
+
+    // Classroom Occupancy Summary
+    const capacitySum = queryOne('SELECT SUM(capacity) as totalCapacity, AVG(capacity) as avgCapacity FROM classrooms WHERE status = ?', [CLASSROOM_STATUS.ACTIVE]);
+    const classroomsByType = queryAll(`
+      SELECT classroom_type as type, COUNT(*) as count 
+      FROM classrooms 
+      GROUP BY classroom_type
+    `);
+
+    res.status(200).json({
+      success: true,
+      stats: {
+        totalStudents,
+        totalFaculty,
+        totalClassrooms,
+        totalActiveRooms,
+        totalDepartments,
+        totalClasses,
+        totalTimetableSlots,
+        totalCapacity: capacitySum?.totalCapacity || 0,
+        avgCapacity: Math.round(capacitySum?.avgCapacity || 0),
+        systemStatus: 'Operational',
+        academicTerm: 'Fall 2026 / Spring 2027',
+        databaseEngine: 'SQLite WAL Mode'
+      },
+      classroomsByType,
+      recentStudents,
+      recentFaculty
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ============================================================================
+// STUDENT MANAGEMENT
+// ============================================================================
+
+export async function getStudents(req, res, next) {
+  try {
+    const { q, department, year, division, status } = req.query;
+
+    let sql = `
+      SELECT id, name, email, role, department, year, division, roll_number as rollNumber, status, created_at as createdAt, updated_at as updatedAt
+      FROM users
+      WHERE role = '${ROLES.STUDENT}'
+    `;
+    const params = [];
+
+    if (q && q.trim()) {
+      sql += ` AND (LOWER(name) LIKE ? OR LOWER(email) LIKE ? OR LOWER(roll_number) LIKE ?)`;
+      const term = `%${q.trim().toLowerCase()}%`;
+      params.push(term, term, term);
+    }
+
+    if (department && department.trim() && department !== 'ALL') {
+      sql += ` AND department = ?`;
+      params.push(department.trim());
+    }
+
+    if (year && year.trim() && year !== 'ALL') {
+      sql += ` AND year = ?`;
+      params.push(year.trim());
+    }
+
+    if (division && division.trim() && division !== 'ALL') {
+      sql += ` AND division = ?`;
+      params.push(division.trim());
+    }
+
+    if (status && status.trim() && status !== 'ALL') {
+      sql += ` AND status = ?`;
+      params.push(status.trim().toUpperCase());
+    }
+
+    sql += ` ORDER BY datetime(created_at) DESC, name ASC`;
+
+    const students = queryAll(sql, params);
+
+    res.status(200).json({
+      success: true,
+      count: students.length,
+      students
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function createStudent(req, res, next) {
+  try {
+    const { name, email, password, department, year, division, rollNumber, status = USER_STATUS.ACTIVE } = req.body;
+
+    if (!name || !name.trim()) return res.status(400).json({ success: false, message: 'Student name is required.' });
+    if (!email || !email.trim()) return res.status(400).json({ success: false, message: 'College email is required.' });
+    if (!isValidEmail(email)) return res.status(400).json({ success: false, message: 'Please provide a valid college email format.' });
+    if (!password || password.length < 6) return res.status(400).json({ success: false, message: 'Temporary password is required (minimum 6 characters).' });
+    if (!department || !department.trim()) return res.status(400).json({ success: false, message: 'Department is required.' });
+    if (!year || !year.trim()) return res.status(400).json({ success: false, message: 'Academic year is required (e.g. SE, TE, BE).' });
+    if (!division || !division.trim()) return res.status(400).json({ success: false, message: 'Division is required (e.g. A, B, C).' });
+    if (!rollNumber || !rollNumber.toString().trim()) return res.status(400).json({ success: false, message: 'Roll number is required.' });
+
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanRoll = rollNumber.toString().trim();
+
+    const existingEmail = queryOne('SELECT id FROM users WHERE LOWER(email) = ?', [cleanEmail]);
+    if (existingEmail) {
+      return res.status(400).json({ success: false, message: `An account with email '${cleanEmail}' already exists.` });
+    }
+
+    const existingRoll = queryOne('SELECT id FROM users WHERE role = ? AND department = ? AND year = ? AND division = ? AND roll_number = ?', [
+      ROLES.STUDENT,
+      department.trim(),
+      year.trim(),
+      division.trim(),
+      cleanRoll
+    ]);
+    if (existingRoll) {
+      return res.status(400).json({
+        success: false,
+        message: `Roll number '${cleanRoll}' already exists in ${department} (${year}-${division}).`
+      });
+    }
+
+    const password_hash = await bcrypt.hash(password.trim(), 10);
+    const id = generateId('usr_stu');
+
+    execute(`
+      INSERT INTO users (
+        id, name, email, password_hash, role, department, year, division, roll_number, status, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    `, [
+      id,
+      name.trim(),
+      cleanEmail,
+      password_hash,
+      ROLES.STUDENT,
+      department.trim(),
+      year.trim(),
+      division.trim().toUpperCase(),
+      cleanRoll,
+      status ? status.trim().toUpperCase() : USER_STATUS.ACTIVE
+    ]);
+
+    const created = queryOne(`
+      SELECT id, name, email, role, department, year, division, roll_number as rollNumber, status, created_at as createdAt
+      FROM users WHERE id = ?
+    `, [id]);
+
+    // Admin System Notification
+    const notifId = generateId('notif_adm_stu');
+    execute(`
+      INSERT INTO notifications (id, user_id, target_role, type, title, message, is_read, link, created_at)
+      VALUES (?, NULL, 'ADMIN', 'NEW_STUDENT', 'New Student Enrollment', ?, 0, '/admin/students', CURRENT_TIMESTAMP)
+    `, [notifId, `${name.trim()} enrolled in ${department.trim()} (${year.trim()}-${division.trim().toUpperCase()}).`]);
+
+    res.status(201).json({
+      success: true,
+      message: `Student '${name.trim()}' successfully enrolled!`,
+      student: created
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateStudent(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { name, email, password, department, year, division, rollNumber, status } = req.body;
+
+    const student = queryOne('SELECT * FROM users WHERE id = ? AND role = ?', [id, ROLES.STUDENT]);
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student record not found.' });
+    }
+
+    if (!name || !name.trim()) return res.status(400).json({ success: false, message: 'Student name is required.' });
+    if (!email || !email.trim()) return res.status(400).json({ success: false, message: 'College email is required.' });
+    if (!isValidEmail(email)) return res.status(400).json({ success: false, message: 'Invalid email format.' });
+
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanRoll = (rollNumber || student.roll_number).toString().trim();
+
+    const duplicateEmail = queryOne('SELECT id FROM users WHERE LOWER(email) = ? AND id != ?', [cleanEmail, id]);
+    if (duplicateEmail) {
+      return res.status(400).json({ success: false, message: `Email '${cleanEmail}' is already in use by another account.` });
+    }
+
+    const duplicateRoll = queryOne(
+      'SELECT id FROM users WHERE role = ? AND department = ? AND year = ? AND division = ? AND roll_number = ? AND id != ?',
+      [ROLES.STUDENT, department || student.department, year || student.year, division || student.division, cleanRoll, id]
+    );
+    if (duplicateRoll) {
+      return res.status(400).json({
+        success: false,
+        message: `Roll number '${cleanRoll}' is already assigned in ${department || student.department} (${(year || student.year)}-${(division || student.division)}).`
+      });
+    }
+
+    let passwordHash = student.password_hash;
+    if (password && password.trim().length >= 6) {
+      passwordHash = await bcrypt.hash(password.trim(), 10);
+    }
+
+    execute(`
+      UPDATE users SET 
+        name = ?,
+        email = ?,
+        password_hash = ?,
+        department = ?,
+        year = ?,
+        division = ?,
+        roll_number = ?,
+        status = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `, [
+      name.trim(),
+      cleanEmail,
+      passwordHash,
+      department ? department.trim() : student.department,
+      year ? year.trim() : student.year,
+      division ? division.trim().toUpperCase() : student.division,
+      cleanRoll,
+      status ? status.trim().toUpperCase() : student.status,
+      id
+    ]);
+
+    const updated = queryOne(`
+      SELECT id, name, email, role, department, year, division, roll_number as rollNumber, status, created_at as createdAt, updated_at as updatedAt
+      FROM users WHERE id = ?
+    `, [id]);
+
+    res.status(200).json({
+      success: true,
+      message: `Student '${name.trim()}' updated successfully.`,
+      student: updated
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function deleteStudent(req, res, next) {
+  try {
+    const { id } = req.params;
+    const student = queryOne('SELECT id, name FROM users WHERE id = ? AND role = ?', [id, ROLES.STUDENT]);
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student record not found.' });
+    }
+
+    execute('DELETE FROM users WHERE id = ?', [id]);
+
+    res.status(200).json({
+      success: true,
+      message: `Student '${student.name}' has been deleted successfully.`
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ============================================================================
+// FACULTY MANAGEMENT
+// ============================================================================
+
+export async function getFaculty(req, res, next) {
+  try {
+    const { q, department, status } = req.query;
+
+    let sql = `
+      SELECT id, name, email, role, department, assigned_subjects, assigned_classes, status, created_at as createdAt, updated_at as updatedAt
+      FROM users
+      WHERE role = '${ROLES.FACULTY}'
+    `;
+    const params = [];
+
+    if (q && q.trim()) {
+      sql += ` AND (LOWER(name) LIKE ? OR LOWER(email) LIKE ?)`;
+      const term = `%${q.trim().toLowerCase()}%`;
+      params.push(term, term);
+    }
+
+    if (department && department.trim() && department !== 'ALL') {
+      sql += ` AND department = ?`;
+      params.push(department.trim());
+    }
+
+    if (status && status.trim() && status !== 'ALL') {
+      sql += ` AND status = ?`;
+      params.push(status.trim().toUpperCase());
+    }
+
+    sql += ` ORDER BY datetime(created_at) DESC, name ASC`;
+
+    const rawFaculty = queryAll(sql, params);
+
+    const faculty = rawFaculty.map(f => {
+      let assignedSubjects = [];
+      let assignedClasses = [];
+      try {
+        if (f.assigned_subjects) assignedSubjects = JSON.parse(f.assigned_subjects);
+        if (f.assigned_classes) assignedClasses = JSON.parse(f.assigned_classes);
+      } catch (e) {
+        // ignore
+      }
+      return {
+        id: f.id,
+        name: f.name,
+        email: f.email,
+        role: f.role,
+        department: f.department,
+        assignedSubjects: Array.isArray(assignedSubjects) ? assignedSubjects : [],
+        assignedClasses: Array.isArray(assignedClasses) ? assignedClasses : [],
+        status: f.status,
+        createdAt: f.createdAt,
+        updatedAt: f.updatedAt
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      count: faculty.length,
+      faculty
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function createFaculty(req, res, next) {
+  try {
+    const { name, email, password, department, assignedSubjects = [], assignedClasses = [], status = USER_STATUS.ACTIVE } = req.body;
+
+    if (!name || !name.trim()) return res.status(400).json({ success: false, message: 'Faculty name is required.' });
+    if (!email || !email.trim()) return res.status(400).json({ success: false, message: 'College email is required.' });
+    if (!isValidEmail(email)) return res.status(400).json({ success: false, message: 'Invalid email format.' });
+    if (!password || password.length < 6) return res.status(400).json({ success: false, message: 'Temporary password is required (minimum 6 characters).' });
+    if (!department || !department.trim()) return res.status(400).json({ success: false, message: 'Department is required.' });
+
+    const cleanEmail = email.trim().toLowerCase();
+
+    const existing = queryOne('SELECT id FROM users WHERE LOWER(email) = ?', [cleanEmail]);
+    if (existing) {
+      return res.status(400).json({ success: false, message: `Account with email '${cleanEmail}' already exists.` });
+    }
+
+    const password_hash = await bcrypt.hash(password.trim(), 10);
+    const id = generateId('usr_fac');
+
+    const subjectsArr = Array.isArray(assignedSubjects) ? assignedSubjects : (assignedSubjects ? [assignedSubjects] : []);
+    const classesArr = Array.isArray(assignedClasses) ? assignedClasses : (assignedClasses ? [assignedClasses] : []);
+
+    execute(`
+      INSERT INTO users (
+        id, name, email, password_hash, role, department, status, assigned_subjects, assigned_classes, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    `, [
+      id,
+      name.trim(),
+      cleanEmail,
+      password_hash,
+      ROLES.FACULTY,
+      department.trim(),
+      status ? status.trim().toUpperCase() : USER_STATUS.ACTIVE,
+      JSON.stringify(subjectsArr),
+      JSON.stringify(classesArr)
+    ]);
+
+    // Admin System Notification
+    const notifId = generateId('notif_adm_fac');
+    execute(`
+      INSERT INTO notifications (id, user_id, target_role, type, title, message, is_read, link, created_at)
+      VALUES (?, NULL, 'ADMIN', 'NEW_FACULTY', 'New Faculty Appointed', ?, 0, '/admin/faculty', CURRENT_TIMESTAMP)
+    `, [notifId, `${name.trim()} appointed to ${department.trim()} department.`]);
+
+    res.status(201).json({
+      success: true,
+      message: `Faculty member '${name.trim()}' successfully registered!`,
+      faculty: {
+        id,
+        name: name.trim(),
+        email: cleanEmail,
+        role: ROLES.FACULTY,
+        department: department.trim(),
+        assignedSubjects: subjectsArr,
+        assignedClasses: classesArr,
+        status: status || USER_STATUS.ACTIVE
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateFaculty(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { name, email, password, department, assignedSubjects, assignedClasses, status } = req.body;
+
+    const faculty = queryOne('SELECT * FROM users WHERE id = ? AND role = ?', [id, ROLES.FACULTY]);
+    if (!faculty) {
+      return res.status(404).json({ success: false, message: 'Faculty record not found.' });
+    }
+
+    if (!name || !name.trim()) return res.status(400).json({ success: false, message: 'Faculty name is required.' });
+    if (!email || !email.trim()) return res.status(400).json({ success: false, message: 'College email is required.' });
+    if (!isValidEmail(email)) return res.status(400).json({ success: false, message: 'Invalid email format.' });
+
+    const cleanEmail = email.trim().toLowerCase();
+    const duplicate = queryOne('SELECT id FROM users WHERE LOWER(email) = ? AND id != ?', [cleanEmail, id]);
+    if (duplicate) {
+      return res.status(400).json({ success: false, message: `Email '${cleanEmail}' is in use by another user.` });
+    }
+
+    let passwordHash = faculty.password_hash;
+    if (password && password.trim().length >= 6) {
+      passwordHash = await bcrypt.hash(password.trim(), 10);
+    }
+
+    const subjectsArr = assignedSubjects !== undefined ? (Array.isArray(assignedSubjects) ? assignedSubjects : [assignedSubjects]) : JSON.parse(faculty.assigned_subjects || '[]');
+    const classesArr = assignedClasses !== undefined ? (Array.isArray(assignedClasses) ? assignedClasses : [assignedClasses]) : JSON.parse(faculty.assigned_classes || '[]');
+
+    execute(`
+      UPDATE users SET
+        name = ?,
+        email = ?,
+        password_hash = ?,
+        department = ?,
+        status = ?,
+        assigned_subjects = ?,
+        assigned_classes = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `, [
+      name.trim(),
+      cleanEmail,
+      passwordHash,
+      department ? department.trim() : faculty.department,
+      status ? status.trim().toUpperCase() : faculty.status,
+      JSON.stringify(subjectsArr),
+      JSON.stringify(classesArr),
+      id
+    ]);
+
+    res.status(200).json({
+      success: true,
+      message: `Faculty '${name.trim()}' updated successfully.`,
+      faculty: {
+        id,
+        name: name.trim(),
+        email: cleanEmail,
+        role: ROLES.FACULTY,
+        department: department ? department.trim() : faculty.department,
+        assignedSubjects: subjectsArr,
+        assignedClasses: classesArr,
+        status: status || faculty.status
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function deleteFaculty(req, res, next) {
+  try {
+    const { id } = req.params;
+    const faculty = queryOne('SELECT id, name FROM users WHERE id = ? AND role = ?', [id, ROLES.FACULTY]);
+    if (!faculty) {
+      return res.status(404).json({ success: false, message: 'Faculty record not found.' });
+    }
+
+    execute('DELETE FROM users WHERE id = ?', [id]);
+
+    res.status(200).json({
+      success: true,
+      message: `Faculty member '${faculty.name}' deleted successfully.`
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ============================================================================
+// CLASSROOM MANAGEMENT
+// ============================================================================
+
+export async function getClassrooms(req, res, next) {
+  try {
+    const { q, type, status } = req.query;
+
+    let sql = `
+      SELECT id, room_number as roomNumber, classroom_type as classroomType, building, floor, capacity, status, has_projector as hasProjector, is_available as isAvailable, created_at as createdAt, updated_at as updatedAt
+      FROM classrooms
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (q && q.trim()) {
+      sql += ` AND (LOWER(room_number) LIKE ? OR LOWER(building) LIKE ? OR LOWER(floor) LIKE ?)`;
+      const term = `%${q.trim().toLowerCase()}%`;
+      params.push(term, term, term);
+    }
+
+    if (type && type.trim() && type !== 'ALL') {
+      sql += ` AND classroom_type = ?`;
+      params.push(type.trim());
+    }
+
+    if (status && status.trim() && status !== 'ALL') {
+      sql += ` AND status = ?`;
+      params.push(status.trim());
+    }
+
+    sql += ` ORDER BY room_number ASC`;
+
+    const classrooms = queryAll(sql, params);
+
+    res.status(200).json({
+      success: true,
+      count: classrooms.length,
+      classrooms
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function createClassroom(req, res, next) {
+  try {
+    const { roomNumber, classroomType = 'Classroom', building, floor = '1st Floor', capacity, status = CLASSROOM_STATUS.ACTIVE, hasProjector = 1 } = req.body;
+
+    if (!roomNumber || !roomNumber.trim()) return res.status(400).json({ success: false, message: 'Room number is required (e.g. Room 301).' });
+    if (!building || !building.trim()) return res.status(400).json({ success: false, message: 'Building / Block is required.' });
+    if (!capacity || isNaN(capacity) || Number(capacity) <= 0) return res.status(400).json({ success: false, message: 'A valid numeric seating capacity is required.' });
+
+    const cleanRoomNumber = roomNumber.trim();
+
+    const existing = queryOne('SELECT id FROM classrooms WHERE LOWER(room_number) = ?', [cleanRoomNumber.toLowerCase()]);
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        message: `Classroom '${cleanRoomNumber}' already exists in database. Duplicate room numbers are not allowed.`
+      });
+    }
+
+    const id = generateId('crm');
+
+    execute(`
+      INSERT INTO classrooms (
+        id, room_number, classroom_type, building, floor, capacity, status, has_projector, is_available, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    `, [
+      id,
+      cleanRoomNumber,
+      classroomType || 'Classroom',
+      building.trim(),
+      floor || '1st Floor',
+      Number(capacity),
+      status || CLASSROOM_STATUS.ACTIVE,
+      hasProjector ? 1 : 0,
+      status === CLASSROOM_STATUS.ACTIVE ? 1 : 0
+    ]);
+
+    const created = queryOne(`
+      SELECT id, room_number as roomNumber, classroom_type as classroomType, building, floor, capacity, status, has_projector as hasProjector, is_available as isAvailable, created_at as createdAt
+      FROM classrooms WHERE id = ?
+    `, [id]);
+
+    res.status(201).json({
+      success: true,
+      message: `Classroom '${cleanRoomNumber}' created successfully!`,
+      classroom: created
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateClassroom(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { roomNumber, classroomType, building, floor, capacity, status, hasProjector } = req.body;
+
+    const classroom = queryOne('SELECT * FROM classrooms WHERE id = ?', [id]);
+    if (!classroom) {
+      return res.status(404).json({ success: false, message: 'Classroom not found.' });
+    }
+
+    if (!roomNumber || !roomNumber.trim()) {
+      return res.status(400).json({ success: false, message: 'Room number is required.' });
+    }
+
+    const cleanRoomNumber = roomNumber.trim();
+    const duplicate = queryOne('SELECT id FROM classrooms WHERE LOWER(room_number) = ? AND id != ?', [cleanRoomNumber.toLowerCase(), id]);
+    if (duplicate) {
+      return res.status(400).json({ success: false, message: `Room number '${cleanRoomNumber}' already exists.` });
+    }
+
+    execute(`
+      UPDATE classrooms SET
+        room_number = ?,
+        classroom_type = ?,
+        building = ?,
+        floor = ?,
+        capacity = ?,
+        status = ?,
+        has_projector = ?,
+        is_available = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `, [
+      cleanRoomNumber,
+      classroomType || classroom.classroom_type,
+      building ? building.trim() : classroom.building,
+      floor || classroom.floor,
+      capacity ? Number(capacity) : classroom.capacity,
+      status || classroom.status,
+      hasProjector !== undefined ? (hasProjector ? 1 : 0) : classroom.has_projector,
+      (status || classroom.status) === CLASSROOM_STATUS.ACTIVE ? 1 : 0,
+      id
+    ]);
+
+    const updated = queryOne(`
+      SELECT id, room_number as roomNumber, classroom_type as classroomType, building, floor, capacity, status, has_projector as hasProjector, is_available as isAvailable, updated_at as updatedAt
+      FROM classrooms WHERE id = ?
+    `, [id]);
+
+    res.status(200).json({
+      success: true,
+      message: `Classroom '${cleanRoomNumber}' updated successfully.`,
+      classroom: updated
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function deleteClassroom(req, res, next) {
+  try {
+    const { id } = req.params;
+    const room = queryOne('SELECT id, room_number FROM classrooms WHERE id = ?', [id]);
+    if (!room) {
+      return res.status(404).json({ success: false, message: 'Classroom not found.' });
+    }
+
+    execute('DELETE FROM classrooms WHERE id = ?', [id]);
+
+    res.status(200).json({
+      success: true,
+      message: `Classroom '${room.room_number}' deleted successfully.`
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ============================================================================
+// CLASS / SECTION MANAGEMENT
+// ============================================================================
+
+export async function getClasses(req, res, next) {
+  try {
+    const classes = queryAll(`
+      SELECT 
+        c.id, 
+        c.department, 
+        c.year, 
+        c.division, 
+        c.class_teacher_id as classTeacherId,
+        u.name as classTeacherName,
+        u.email as classTeacherEmail,
+        c.created_at as createdAt,
+        (
+          SELECT COUNT(*) FROM users s 
+          WHERE s.role = '${ROLES.STUDENT}' 
+            AND s.department = c.department 
+            AND s.year = c.year 
+            AND s.division = c.division
+        ) as studentCount
+      FROM classes c
+      LEFT JOIN users u ON c.class_teacher_id = u.id
+      ORDER BY c.department ASC, c.year ASC, c.division ASC
+    `);
+
+    res.status(200).json({
+      success: true,
+      count: classes.length,
+      classes
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function createClass(req, res, next) {
+  try {
+    const { department, year, division, classTeacherId } = req.body;
+
+    if (!department || !department.trim()) return res.status(400).json({ success: false, message: 'Department is required.' });
+    if (!year || !year.trim()) return res.status(400).json({ success: false, message: 'Academic year is required (e.g. SE, TE).' });
+    if (!division || !division.trim()) return res.status(400).json({ success: false, message: 'Division is required (e.g. A, B).' });
+
+    const cleanDept = department.trim();
+    const cleanYear = year.trim();
+    const cleanDiv = division.trim().toUpperCase();
+
+    const existing = queryOne('SELECT id FROM classes WHERE department = ? AND year = ? AND division = ?', [cleanDept, cleanYear, cleanDiv]);
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        message: `Class section ${cleanDept} -> ${cleanYear} -> Division ${cleanDiv} already exists.`
+      });
+    }
+
+    const id = generateId('cls');
+
+    execute(`
+      INSERT INTO classes (id, department, year, division, class_teacher_id, created_at)
+      VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    `, [id, cleanDept, cleanYear, cleanDiv, classTeacherId || null]);
+
+    res.status(201).json({
+      success: true,
+      message: `Class Section ${cleanDept} - ${cleanYear}-${cleanDiv} created!`,
+      classItem: {
+        id,
+        department: cleanDept,
+        year: cleanYear,
+        division: cleanDiv,
+        classTeacherId: classTeacherId || null,
+        studentCount: 0
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function updateClass(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { department, year, division, classTeacherId } = req.body;
+
+    const classItem = queryOne('SELECT * FROM classes WHERE id = ?', [id]);
+    if (!classItem) {
+      return res.status(404).json({ success: false, message: 'Class section not found.' });
+    }
+
+    const cleanDept = department ? department.trim() : classItem.department;
+    const cleanYear = year ? year.trim() : classItem.year;
+    const cleanDiv = division ? division.trim().toUpperCase() : classItem.division;
+
+    const duplicate = queryOne('SELECT id FROM classes WHERE department = ? AND year = ? AND division = ? AND id != ?', [cleanDept, cleanYear, cleanDiv, id]);
+    if (duplicate) {
+      return res.status(400).json({ success: false, message: `Class section ${cleanDept} -> ${cleanYear}-${cleanDiv} already exists.` });
+    }
+
+    execute(`
+      UPDATE classes SET
+        department = ?,
+        year = ?,
+        division = ?,
+        class_teacher_id = ?
+      WHERE id = ?
+    `, [cleanDept, cleanYear, cleanDiv, classTeacherId !== undefined ? classTeacherId : classItem.class_teacher_id, id]);
+
+    res.status(200).json({
+      success: true,
+      message: `Class section updated successfully.`
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function deleteClass(req, res, next) {
+  try {
+    const { id } = req.params;
+    const classItem = queryOne('SELECT * FROM classes WHERE id = ?', [id]);
+    if (!classItem) {
+      return res.status(404).json({ success: false, message: 'Class section not found.' });
+    }
+
+    execute('DELETE FROM classes WHERE id = ?', [id]);
+
+    res.status(200).json({
+      success: true,
+      message: `Class section ${classItem.department} - ${classItem.year}-${classItem.division} deleted.`
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ============================================================================
+// PART 3: SMART TIMETABLE MANAGEMENT & CONFLICT DETECTION ENGINE
+// ============================================================================
+
+/**
+ * Conflict Validator: Checks Room, Faculty, and Class-Section Overlaps
+ */
+function validateTimetableConflicts({ dayOfWeek, startTime, endTime, classroomId, facultyId, classId, excludeId = null }) {
+  // 1. Room Conflict Check
+  if (classroomId) {
+    const roomConflictQuery = `
+      SELECT t.*, s.name as subjectName, c.department, c.year, c.division, cl.room_number as roomNumber
+      FROM timetables t
+      LEFT JOIN subjects s ON t.subject_id = s.id
+      LEFT JOIN classes c ON t.class_id = c.id
+      LEFT JOIN classrooms cl ON t.classroom_id = cl.id
+      WHERE t.day_of_week = ? 
+        AND t.classroom_id = ? 
+        AND (t.start_time < ? AND t.end_time > ?)
+        AND (? IS NULL OR t.id != ?)
+      LIMIT 1
+    `;
+    const roomConflict = queryOne(roomConflictQuery, [dayOfWeek, classroomId, endTime, startTime, excludeId, excludeId]);
+    if (roomConflict) {
+      return {
+        hasConflict: true,
+        type: 'ROOM_CONFLICT',
+        message: `Classroom conflict: ${roomConflict.roomNumber || 'Room'} is already occupied during this time (${roomConflict.subjectName || 'Lecture'} for ${roomConflict.year}-${roomConflict.division} from ${roomConflict.start_time} to ${roomConflict.end_time}).`
+      };
+    }
+  }
+
+  // 2. Faculty Conflict Check
+  if (facultyId) {
+    const facultyConflictQuery = `
+      SELECT t.*, s.name as subjectName, c.department, c.year, c.division, u.name as facultyName, cl.room_number as roomNumber
+      FROM timetables t
+      LEFT JOIN subjects s ON t.subject_id = s.id
+      LEFT JOIN classes c ON t.class_id = c.id
+      LEFT JOIN users u ON t.faculty_id = u.id
+      LEFT JOIN classrooms cl ON t.classroom_id = cl.id
+      WHERE t.day_of_week = ? 
+        AND t.faculty_id = ? 
+        AND (t.start_time < ? AND t.end_time > ?)
+        AND (? IS NULL OR t.id != ?)
+      LIMIT 1
+    `;
+    const facultyConflict = queryOne(facultyConflictQuery, [dayOfWeek, facultyId, endTime, startTime, excludeId, excludeId]);
+    if (facultyConflict) {
+      return {
+        hasConflict: true,
+        type: 'FACULTY_CONFLICT',
+        message: `Faculty conflict: ${facultyConflict.facultyName} is already assigned to ${facultyConflict.subjectName || 'a lecture'} (${facultyConflict.year}-${facultyConflict.division} in ${facultyConflict.roomNumber || 'Room'}) from ${facultyConflict.start_time} to ${facultyConflict.end_time}.`
+      };
+    }
+  }
+
+  // 3. Class / Section Conflict Check
+  if (classId) {
+    const classConflictQuery = `
+      SELECT t.*, s.name as subjectName, c.department, c.year, c.division, u.name as facultyName, cl.room_number as roomNumber
+      FROM timetables t
+      LEFT JOIN subjects s ON t.subject_id = s.id
+      LEFT JOIN classes c ON t.class_id = c.id
+      LEFT JOIN users u ON t.faculty_id = u.id
+      LEFT JOIN classrooms cl ON t.classroom_id = cl.id
+      WHERE t.day_of_week = ? 
+        AND t.class_id = ? 
+        AND (t.start_time < ? AND t.end_time > ?)
+        AND (? IS NULL OR t.id != ?)
+      LIMIT 1
+    `;
+    const classConflict = queryOne(classConflictQuery, [dayOfWeek, classId, endTime, startTime, excludeId, excludeId]);
+    if (classConflict) {
+      return {
+        hasConflict: true,
+        type: 'CLASS_CONFLICT',
+        message: `Class conflict: ${classConflict.department} (${classConflict.year}-${classConflict.division}) already has a scheduled lecture (${classConflict.subjectName || 'Lecture'} with ${classConflict.facultyName || 'Faculty'}) from ${classConflict.start_time} to ${classConflict.end_time}.`
+      };
+    }
+  }
+
+  return { hasConflict: false };
+}
+
+/**
+ * Get all timetable entries with joins and filter support
+ * GET /api/admin/timetable
+ */
+export async function getTimetables(req, res, next) {
+  try {
+    const { department, year, division, classId, facultyId, classroomId, day, q } = req.query;
+
+    let sql = `
+      SELECT 
+        t.id,
+        t.class_id as classId,
+        t.day_of_week as dayOfWeek,
+        t.period_number as periodNumber,
+        t.start_time as startTime,
+        t.end_time as endTime,
+        t.subject_id as subjectId,
+        s.name as subjectName,
+        s.code as subjectCode,
+        t.faculty_id as facultyId,
+        u.name as facultyName,
+        u.email as facultyEmail,
+        t.classroom_id as classroomId,
+        cl.room_number as roomNumber,
+        cl.classroom_type as classroomType,
+        cl.building,
+        cl.floor,
+        c.department,
+        c.year,
+        c.division,
+        t.semester,
+        t.academic_year as academicYear,
+        t.created_at as createdAt,
+        t.updated_at as updatedAt
+      FROM timetables t
+      LEFT JOIN classes c ON t.class_id = c.id
+      LEFT JOIN subjects s ON t.subject_id = s.id
+      LEFT JOIN users u ON t.faculty_id = u.id
+      LEFT JOIN classrooms cl ON t.classroom_id = cl.id
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (classId && classId !== 'ALL') {
+      sql += ` AND t.class_id = ?`;
+      params.push(classId);
+    }
+    if (department && department !== 'ALL') {
+      sql += ` AND c.department = ?`;
+      params.push(department);
+    }
+    if (year && year !== 'ALL') {
+      sql += ` AND c.year = ?`;
+      params.push(year);
+    }
+    if (division && division !== 'ALL') {
+      sql += ` AND c.division = ?`;
+      params.push(division);
+    }
+    if (day && day !== 'ALL') {
+      sql += ` AND t.day_of_week = ?`;
+      params.push(day);
+    }
+    if (facultyId && facultyId !== 'ALL') {
+      sql += ` AND t.faculty_id = ?`;
+      params.push(facultyId);
+    }
+    if (classroomId && classroomId !== 'ALL') {
+      sql += ` AND t.classroom_id = ?`;
+      params.push(classroomId);
+    }
+    if (q && q.trim()) {
+      sql += ` AND (LOWER(s.name) LIKE ? OR LOWER(u.name) LIKE ? OR LOWER(cl.room_number) LIKE ? OR LOWER(c.department) LIKE ?)`;
+      const term = `%${q.trim().toLowerCase()}%`;
+      params.push(term, term, term, term);
+    }
+
+    sql += ` ORDER BY 
+      CASE t.day_of_week
+        WHEN 'Monday' THEN 1
+        WHEN 'Tuesday' THEN 2
+        WHEN 'Wednesday' THEN 3
+        WHEN 'Thursday' THEN 4
+        WHEN 'Friday' THEN 5
+        WHEN 'Saturday' THEN 6
+        ELSE 7
+      END,
+      t.start_time ASC
+    `;
+
+    const timetables = queryAll(sql, params);
+
+    res.status(200).json({
+      success: true,
+      count: timetables.length,
+      timetables
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Create a new timetable entry with conflict prevention
+ * POST /api/admin/timetable
+ */
+export async function createTimetable(req, res, next) {
+  try {
+    const {
+      dayOfWeek,
+      startTime,
+      endTime,
+      classId,
+      department,
+      year,
+      division,
+      subjectId,
+      facultyId,
+      classroomId,
+      periodNumber = 1,
+      semester = 4,
+      academicYear = '2026-2027'
+    } = req.body;
+
+    if (!dayOfWeek) return res.status(400).json({ success: false, message: 'Day of week is required.' });
+    if (!startTime || !endTime) return res.status(400).json({ success: false, message: 'Start time and End time are required.' });
+    if (startTime >= endTime) return res.status(400).json({ success: false, message: 'Start time must be before End time.' });
+
+    // Determine classId if department, year, division are provided
+    let targetClassId = classId;
+    if (!targetClassId && department && year && division) {
+      const foundClass = queryOne('SELECT id FROM classes WHERE department = ? AND year = ? AND division = ?', [department.trim(), year.trim(), division.trim().toUpperCase()]);
+      if (foundClass) targetClassId = foundClass.id;
+    }
+
+    if (!targetClassId) {
+      return res.status(400).json({ success: false, message: 'Valid Class Section mapping is required.' });
+    }
+    if (!subjectId) {
+      return res.status(400).json({ success: false, message: 'Subject is required.' });
+    }
+    if (!facultyId) {
+      return res.status(400).json({ success: false, message: 'Assigned Faculty is required.' });
+    }
+    if (!classroomId) {
+      return res.status(400).json({ success: false, message: 'Classroom / Lab is required.' });
+    }
+
+    // Run triple conflict detection
+    const conflict = validateTimetableConflicts({
+      dayOfWeek,
+      startTime,
+      endTime,
+      classroomId,
+      facultyId,
+      classId: targetClassId,
+      excludeId: null
+    });
+
+    if (conflict.hasConflict) {
+      return res.status(400).json({
+        success: false,
+        conflictType: conflict.type,
+        message: conflict.message
+      });
+    }
+
+    const id = generateId('tt');
+
+    execute(`
+      INSERT INTO timetables (
+        id, class_id, day_of_week, period_number, start_time, end_time, subject_id, faculty_id, classroom_id, semester, academic_year, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    `, [
+      id,
+      targetClassId,
+      dayOfWeek,
+      periodNumber || 1,
+      startTime,
+      endTime,
+      subjectId,
+      facultyId,
+      classroomId,
+      semester || 4,
+      academicYear || '2026-2027'
+    ]);
+
+    const created = queryOne(`
+      SELECT 
+        t.id, t.class_id as classId, t.day_of_week as dayOfWeek, t.period_number as periodNumber,
+        t.start_time as startTime, t.end_time as endTime, t.subject_id as subjectId,
+        s.name as subjectName, t.faculty_id as facultyId, u.name as facultyName,
+        t.classroom_id as classroomId, cl.room_number as roomNumber,
+        c.department, c.year, c.division
+      FROM timetables t
+      LEFT JOIN classes c ON t.class_id = c.id
+      LEFT JOIN subjects s ON t.subject_id = s.id
+      LEFT JOIN users u ON t.faculty_id = u.id
+      LEFT JOIN classrooms cl ON t.classroom_id = cl.id
+      WHERE t.id = ?
+    `, [id]);
+
+    // Notify Assigned Faculty
+    if (facultyId) {
+      const fNotifId = generateId('notif_tt_fac');
+      execute(`
+        INSERT INTO notifications (id, user_id, target_role, type, title, message, is_read, link, created_at)
+        VALUES (?, ?, 'FACULTY', 'TIMETABLE_CHANGE', 'New Lecture Assigned', ?, 0, '/faculty/timetable', CURRENT_TIMESTAMP)
+      `, [fNotifId, facultyId, `New lecture scheduled: ${created?.subjectName || 'Subject'} on ${dayOfWeek} at ${startTime} - ${endTime} in Room ${created?.roomNumber || 'Assigned Room'}`]);
+    }
+
+    // Notify Students of this Class
+    const classInfo = queryOne('SELECT department, year, division FROM classes WHERE id = ?', [targetClassId]);
+    if (classInfo) {
+      const classStudents = queryAll('SELECT id FROM users WHERE role = ? AND department = ? AND year = ? AND division = ?', [ROLES.STUDENT, classInfo.department, classInfo.year, classInfo.division]);
+      for (const st of classStudents) {
+        const sNotifId = generateId('notif_tt_stu');
+        execute(`
+          INSERT INTO notifications (id, user_id, target_role, type, title, message, is_read, link, created_at)
+          VALUES (?, ?, 'STUDENT', 'TIMETABLE_CHANGE', 'Timetable Updated', ?, 0, '/student/timetable', CURRENT_TIMESTAMP)
+        `, [sNotifId, st.id, `New lecture scheduled: ${created?.subjectName || 'Subject'} on ${dayOfWeek} at ${startTime} - ${endTime}`]);
+      }
+    }
+
+    res.status(201).json({
+      success: true,
+      message: `Timetable slot scheduled successfully! (${created?.subjectName} on ${dayOfWeek} at ${startTime} - ${endTime})`,
+      timetable: created
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Update timetable entry with conflict prevention
+ * PUT /api/admin/timetable/:id
+ */
+export async function updateTimetable(req, res, next) {
+  try {
+    const { id } = req.params;
+    const {
+      dayOfWeek,
+      startTime,
+      endTime,
+      classId,
+      department,
+      year,
+      division,
+      subjectId,
+      facultyId,
+      classroomId,
+      periodNumber,
+      semester,
+      academicYear
+    } = req.body;
+
+    const existing = queryOne('SELECT * FROM timetables WHERE id = ?', [id]);
+    if (!existing) {
+      return res.status(404).json({ success: false, message: 'Timetable entry not found.' });
+    }
+
+    const targetDay = dayOfWeek || existing.day_of_week;
+    const targetStart = startTime || existing.start_time;
+    const targetEnd = endTime || existing.end_time;
+    const targetClassId = classId || existing.class_id;
+    const targetSubjectId = subjectId || existing.subject_id;
+    const targetFacultyId = facultyId || existing.faculty_id;
+    const targetClassroomId = classroomId || existing.classroom_id;
+
+    if (targetStart >= targetEnd) {
+      return res.status(400).json({ success: false, message: 'Start time must be before End time.' });
+    }
+
+    // Run triple conflict check excluding current entry
+    const conflict = validateTimetableConflicts({
+      dayOfWeek: targetDay,
+      startTime: targetStart,
+      endTime: targetEnd,
+      classroomId: targetClassroomId,
+      facultyId: targetFacultyId,
+      classId: targetClassId,
+      excludeId: id
+    });
+
+    if (conflict.hasConflict) {
+      return res.status(400).json({
+        success: false,
+        conflictType: conflict.type,
+        message: conflict.message
+      });
+    }
+
+    execute(`
+      UPDATE timetables SET
+        class_id = ?,
+        day_of_week = ?,
+        period_number = ?,
+        start_time = ?,
+        end_time = ?,
+        subject_id = ?,
+        faculty_id = ?,
+        classroom_id = ?,
+        semester = ?,
+        academic_year = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `, [
+      targetClassId,
+      targetDay,
+      periodNumber !== undefined ? periodNumber : existing.period_number,
+      targetStart,
+      targetEnd,
+      targetSubjectId,
+      targetFacultyId,
+      targetClassroomId,
+      semester || existing.semester,
+      academicYear || existing.academic_year,
+      id
+    ]);
+
+    // Notify Assigned Faculty
+    if (targetFacultyId) {
+      const fNotifId = generateId('notif_tt_fac');
+      execute(`
+        INSERT INTO notifications (id, user_id, target_role, type, title, message, is_read, link, created_at)
+        VALUES (?, ?, 'FACULTY', 'TIMETABLE_CHANGE', 'Lecture Schedule Updated', ?, 0, '/faculty/timetable', CURRENT_TIMESTAMP)
+      `, [fNotifId, targetFacultyId, `Your lecture schedule for ${targetDay} (${targetStart} - ${targetEnd}) has been updated.`]);
+    }
+
+    // Notify Students of this Class
+    const classInfo = queryOne('SELECT department, year, division FROM classes WHERE id = ?', [targetClassId]);
+    if (classInfo) {
+      const classStudents = queryAll('SELECT id FROM users WHERE role = ? AND department = ? AND year = ? AND division = ?', [ROLES.STUDENT, classInfo.department, classInfo.year, classInfo.division]);
+      for (const st of classStudents) {
+        const sNotifId = generateId('notif_tt_stu');
+        execute(`
+          INSERT INTO notifications (id, user_id, target_role, type, title, message, is_read, link, created_at)
+          VALUES (?, ?, 'STUDENT', 'TIMETABLE_CHANGE', 'Timetable Updated', ?, 0, '/student/timetable', CURRENT_TIMESTAMP)
+        `, [sNotifId, st.id, `Your timetable schedule for ${targetDay} (${targetStart} - ${targetEnd}) has been updated.`]);
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Timetable entry updated successfully.'
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Delete timetable entry
+ * DELETE /api/admin/timetable/:id
+ */
+export async function deleteTimetable(req, res, next) {
+  try {
+    const { id } = req.params;
+    const entry = queryOne('SELECT id, day_of_week, start_time, end_time FROM timetables WHERE id = ?', [id]);
+    if (!entry) {
+      return res.status(404).json({ success: false, message: 'Timetable entry not found.' });
+    }
+
+    execute('DELETE FROM timetables WHERE id = ?', [id]);
+
+    res.status(200).json({
+      success: true,
+      message: `Timetable slot (${entry.day_of_week} ${entry.start_time} - ${entry.end_time}) deleted successfully.`
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ============================================================================
+// CLASSROOM AVAILABILITY FOUNDATION (Shared Engine for Admin & Faculty)
+// ============================================================================
+
+export async function getClassroomAvailability(req, res, next) {
+  try {
+    const { date, time, startTime, endTime, day, search } = req.query;
+
+    // Determine Day of Week
+    let dayOfWeek = day || 'Monday';
+    if (date) {
+      const parsedDate = new Date(date);
+      if (!isNaN(parsedDate.getTime())) {
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        dayOfWeek = days[parsedDate.getDay()];
+      }
+    }
+
+    // Determine start & end time window
+    const targetStart = startTime || time || '10:00';
+    const targetEnd = endTime || (startTime ? (parseInt(startTime.split(':')[0], 10) + 1).toString().padStart(2, '0') + ':00' : '11:00');
+
+    // Fetch all classrooms
+    let roomSql = `
+      SELECT 
+        id, 
+        room_number as roomNumber, 
+        classroom_type as classroomType, 
+        building, 
+        floor, 
+        capacity, 
+        status, 
+        has_projector as hasProjector
+      FROM classrooms
+      WHERE 1=1
+    `;
+    const roomParams = [];
+
+    if (search && search.trim()) {
+      roomSql += ` AND (LOWER(room_number) LIKE ? OR LOWER(building) LIKE ?)`;
+      const term = `%${search.trim().toLowerCase()}%`;
+      roomParams.push(term, term);
+    }
+
+    roomSql += ` ORDER BY room_number ASC`;
+    const allRooms = queryAll(roomSql, roomParams);
+
+    // Fetch timetable sessions on this day
+    const activeSessions = queryAll(`
+      SELECT 
+        t.id as timetableId,
+        t.classroom_id as classroomId,
+        t.start_time as startTime,
+        t.end_time as endTime,
+        t.day_of_week as dayOfWeek,
+        s.name as subjectName,
+        s.code as subjectCode,
+        u.name as facultyName,
+        c.department as classDepartment,
+        c.year as classYear,
+        c.division as classDivision
+      FROM timetables t
+      LEFT JOIN subjects s ON t.subject_id = s.id
+      LEFT JOIN users u ON t.faculty_id = u.id
+      LEFT JOIN classes c ON t.class_id = c.id
+      WHERE t.day_of_week = ?
+    `, [dayOfWeek]);
+
+    // Match sessions with rooms based on time overlap
+    const results = allRooms.map(room => {
+      const session = activeSessions.find(s => {
+        if (s.classroomId !== room.id) return false;
+        // Interval overlap: s.startTime < targetEnd && s.endTime > targetStart
+        return s.startTime < targetEnd && s.endTime > targetStart;
+      });
+
+      const isOccupied = room.status === CLASSROOM_STATUS.ACTIVE && !!session;
+      const isInactive = room.status === CLASSROOM_STATUS.INACTIVE;
+
+      return {
+        id: room.id,
+        roomNumber: room.roomNumber,
+        classroomType: room.classroomType,
+        building: room.building,
+        floor: room.floor,
+        capacity: room.capacity,
+        hasProjector: !!room.hasProjector,
+        status: isInactive ? 'INACTIVE' : (isOccupied ? 'OCCUPIED' : 'AVAILABLE'),
+        isAvailable: !isOccupied && !isInactive,
+        occupiedDetails: isOccupied ? {
+          subject: session.subjectName || session.subjectCode || 'General Lecture',
+          faculty: session.facultyName || "Assigned Faculty",
+          class: `${session.classYear || 'SE'}-${session.classDivision || 'A'}`,
+          timeSlot: `${session.startTime} – ${session.endTime}`,
+          dayOfWeek
+        } : null
+      };
+    });
+
+    const summary = {
+      total: results.length,
+      available: results.filter(r => r.status === 'AVAILABLE').length,
+      occupied: results.filter(r => r.status === 'OCCUPIED').length,
+      inactive: results.filter(r => r.status === 'INACTIVE').length
+    };
+
+    res.status(200).json({
+      success: true,
+      dayOfWeek,
+      selectedTime: `${targetStart} – ${targetEnd}`,
+      startTime: targetStart,
+      endTime: targetEnd,
+      summary,
+      rooms: results
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ============================================================================
+// METADATA & HELPER ENDPOINTS
+// ============================================================================
+
+export async function getAdminOptions(req, res, next) {
+  try {
+    const departments = queryAll('SELECT id, name, code, hod_name as hodName FROM departments ORDER BY name ASC');
+    const subjects = queryAll('SELECT id, code, name, department, semester, credits FROM subjects ORDER BY name ASC');
+    const facultyList = queryAll(`SELECT id, name, email, department FROM users WHERE role = '${ROLES.FACULTY}' ORDER BY name ASC`);
+    const classrooms = queryAll('SELECT id, room_number as roomNumber, classroom_type as classroomType, building, capacity, status FROM classrooms WHERE status = ? ORDER BY room_number ASC', [CLASSROOM_STATUS.ACTIVE]);
+    const classes = queryAll('SELECT id, department, year, division FROM classes ORDER BY department ASC, year ASC, division ASC');
+    res.status(200).json({
+      success: true,
+      departments: departments.map(d => d.name),
+      departmentList: departments,
+      classroomTypes: CLASSROOM_TYPES,
+      academicYears: ACADEMIC_YEARS,
+      divisions: DIVISIONS,
+      subjects,
+      facultyList,
+      classrooms,
+      classes
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ============================================================================
+// ADMIN NOTIFICATIONS & BROADCASTS
+// ============================================================================
+
+/**
+ * Get Admin Notifications
+ * GET /api/admin/notifications
+ */
+export async function getAdminNotifications(req, res, next) {
+  try {
+    const notifications = queryAll(`
+      SELECT id, user_id as userId, target_role as targetRole, type, title, message, is_read as isRead, link, created_at as createdAt
+      FROM notifications
+      WHERE user_id = ? OR target_role IN ('ADMIN', 'ALL')
+      ORDER BY datetime(created_at) DESC, id DESC
+      LIMIT 100
+    `, [req.user.id]);
+
+    const unreadCount = notifications.filter(n => !n.isRead).length;
+
+    res.status(200).json({
+      success: true,
+      unreadCount,
+      notifications
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Broadcast Campus Circular / Admin Notification
+ * POST /api/admin/notifications/broadcast
+ */
+export async function broadcastNotification(req, res, next) {
+  try {
+    const { title, message, target = 'ALL' } = req.body;
+    if (!title || !title.trim() || !message || !message.trim()) {
+      return res.status(400).json({ success: false, message: 'Notification title and message are required.' });
+    }
+
+    const validTargets = ['ALL', 'STUDENT', 'FACULTY', 'ADMIN'];
+    const targetRole = validTargets.includes(target) ? target : 'ALL';
+    const id = generateId('notif_bc');
+
+    execute(`
+      INSERT INTO notifications (id, user_id, target_role, type, title, message, is_read, link, created_at)
+      VALUES (?, NULL, ?, 'CAMPUS_CIRCULAR', ?, ?, 0, '/notifications', CURRENT_TIMESTAMP)
+    `, [id, targetRole, title.trim(), message.trim()]);
+
+    res.status(201).json({
+      success: true,
+      message: `Campus circular broadcasted successfully to ${targetRole}!`,
+      notificationId: id
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Mark Single Admin Notification as Read
+ * PUT /api/admin/notifications/:id/read
+ */
+export async function markAdminNotificationRead(req, res, next) {
+  try {
+    const { id } = req.params;
+    execute('UPDATE notifications SET is_read = 1 WHERE id = ?', [id]);
+    res.status(200).json({ success: true, message: 'Notification marked as read.' });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Mark All Admin Notifications as Read
+ * PUT /api/admin/notifications/mark-all-read
+ */
+export async function markAllAdminNotificationsRead(req, res, next) {
+  try {
+    execute("UPDATE notifications SET is_read = 1 WHERE user_id = ? OR target_role IN ('ADMIN', 'ALL')", [req.user.id]);
+    res.status(200).json({ success: true, message: 'All admin notifications marked as read.' });
+  } catch (error) {
+    next(error);
+  }
+}

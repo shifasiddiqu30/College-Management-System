@@ -1,0 +1,22 @@
+{
+  "name": "college-management-system",
+  "version": "1.0.0",
+  "description": "College Management System - Part 1: Foundation & Authentication",
+  "scripts": {
+    "dev": "node run-dev.js",
+    "server": "npm --prefix server run dev",
+    "client": "npm --prefix client run dev",
+    "seed": "npm --prefix server run seed",
+    "install-all": "npm --prefix server install && npm --prefix client install",
+    "build": "npm --prefix client run build"
+  },
+  "keywords": [
+    "college-management-system",
+    "rbac",
+    "jwt",
+    "react",
+    "express"
+  ],
+  "author": "",
+  "license": "ISC"
+}
