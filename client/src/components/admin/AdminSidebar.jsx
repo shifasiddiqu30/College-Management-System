@@ -6,6 +6,7 @@ import {
   Users2,
   Building2,
   CalendarCheck,
+  Calendar,
   Clock,
   Layers,
   Bell,
@@ -25,15 +26,20 @@ export default function AdminSidebar({ isMobileOpen, closeMobileSidebar }) {
     navigate('/login');
   };
 
-  const navItems = [
+  const coreNavItems = [
     { label: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
     { label: 'Departments', path: '/admin/departments', icon: Landmark },
     { label: 'Students', path: '/admin/students', icon: GraduationCap },
     { label: 'Faculty', path: '/admin/faculty', icon: Users2 },
     { label: 'Classrooms', path: '/admin/classrooms', icon: Building2 },
-    { label: 'Class & Sections', path: '/admin/classes', icon: Layers },
+    { label: 'Class & Sections', path: '/admin/classes', icon: Layers }
+  ];
+
+  const scheduleNavItems = [
+    { label: 'Student Timetable', path: '/admin/timetable', icon: CalendarCheck },
+    { label: 'Faculty Timetable', path: '/admin/faculty-timetable', icon: Calendar },
     { label: 'Classroom Availability', path: '/admin/classroom-availability', icon: Clock, badge: 'Live' },
-    { label: 'Timetable', path: '/admin/timetable', icon: CalendarCheck, badge: 'Part 3' },
+    { label: 'Faculty Availability', path: '/admin/faculty-availability', icon: Users2, badge: 'Live' },
     { label: 'Notifications', path: '/admin/notifications', icon: Bell },
     { label: 'Profile', path: '/admin/profile', icon: UserCheck }
   ];
@@ -73,7 +79,7 @@ export default function AdminSidebar({ isMobileOpen, closeMobileSidebar }) {
         {/* Navigation Items */}
         <nav className="sidebar-nav">
           <div className="nav-category">Core Management</div>
-          {navItems.slice(0, 5).map((item) => {
+          {coreNavItems.map((item) => {
             const Icon = item.icon;
             return (
               <NavLink
@@ -90,7 +96,7 @@ export default function AdminSidebar({ isMobileOpen, closeMobileSidebar }) {
           })}
 
           <div className="nav-category" style={{ marginTop: '0.75rem' }}>Operations & Schedules</div>
-          {navItems.slice(5).map((item) => {
+          {scheduleNavItems.map((item) => {
             const Icon = item.icon;
             return (
               <NavLink

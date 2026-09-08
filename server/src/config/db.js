@@ -91,6 +91,9 @@ export function initDB() {
     addColumnIfMissing('academic_performance', 'is_published', "BOOLEAN DEFAULT 1");
     addColumnIfMissing('academic_performance', 'updated_at', "DATETIME");
 
+    // Classes Migrations
+    addColumnIfMissing('classes', 'created_at', "DATETIME DEFAULT CURRENT_TIMESTAMP");
+
     // Notifications Migrations
     addColumnIfMissing('notifications', 'user_id', "TEXT REFERENCES users(id)");
     addColumnIfMissing('notifications', 'type', "TEXT DEFAULT 'GENERAL'");

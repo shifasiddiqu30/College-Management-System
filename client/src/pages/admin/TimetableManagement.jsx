@@ -232,22 +232,46 @@ export default function TimetableManagement() {
     }
   };
 
-  // Group timetables by day for weekly grid
-  const timetableByDay = daysOfWeek.reduce((acc, day) => {
-    acc[day] = timetables
-      .filter((t) => t.dayOfWeek === day)
-      .sort((a, b) => a.startTime.localeCompare(b.startTime));
-    return acc;
-  }, {});
+  // Standard College Time Slots
+  const baseTimeSlots = [
+    { label: '09:00 AM – 10:00 AM', start: '09:00', end: '10:00', period: 'Period 1' },
+    { label: '10:00 AM – 11:00 AM', start: '10:00', end: '11:00', period: 'Period 2' },
+    { label: '11:15 AM – 12:15 PM', start: '11:15', end: '12:15', period: 'Period 3' },
+    { label: '12:15 PM – 01:15 PM', start: '12:15', end: '13:15', period: 'Period 4' },
+    { label: '02:00 PM – 03:00 PM', start: '14:00', end: '15:00', period: 'Period 5' },
+    { label: '03:00 PM – 04:00 PM', start: '15:00', end: '16:00', period: 'Period 6' },
+    { label: '04:15 PM – 05:15 PM', start: '16:15', end: '17:15', period: 'Period 7' }
+  ];
+
+  // Derive all active time slots from timetable entries if any custom slot exists
+  const activeTimeSlots = [...baseTimeSlots];
+  timetables.forEach((t) => {
+    if (!activeTimeSlots.some((s) => s.start === t.startTime && s.end === t.endTime)) {
+      activeTimeSlots.push({
+        label: `${t.startTime} – ${t.endTime}`,
+        start: t.startTime,
+        end: t.endTime,
+        period: `Period ${t.periodNumber || ''}`
+      });
+    }
+  });
+  activeTimeSlots.sort((a, b) => a.start.localeCompare(b.start));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
       {/* Header & Controls */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fff' }}>Master Timetable Engine</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 800, padding: '0.2rem 0.6rem', borderRadius: '999px', background: 'rgba(99, 102, 241, 0.2)', color: '#818cf8', letterSpacing: '0.06em' }}>
+              OFFICIAL STUDENT SCHEDULE
+            </span>
+          </div>
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fff' }}>
+            TIMETABLE FOR STUDENTS — {filterDept === 'ALL' ? 'All Departments' : filterDept}
+          </h2>
           <p style={{ fontSize: '0.85rem', color: '#94a3b8' }}>
-            Official weekly lecture schedules, automated clash prevention & room allocations
+            {filterDept !== 'ALL' ? `${filterDept} • Year: ${filterYear} • Division: ${filterDiv}` : 'Official master weekly lecture schedules, automated clash prevention & room allocations'}
           </p>
         </div>
 
@@ -257,7 +281,7 @@ export default function TimetableManagement() {
               className="btn-icon"
               style={{ background: viewMode === 'grid' ? 'rgba(99, 102, 241, 0.2)' : 'transparent', color: viewMode === 'grid' ? '#818cf8' : '#94a3b8' }}
               onClick={() => setViewMode('grid')}
-              title="Weekly Grid View"
+              title="Weekly Matrix Table View"
             >
               <LayoutGrid size={16} />
             </button>
@@ -352,106 +376,156 @@ export default function TimetableManagement() {
       {/* Main Timetable View */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '4rem', color: '#94a3b8' }}>
-          Loading master timetable data...
+          Loading student timetable data...
         </div>
       ) : timetables.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '4rem', color: '#64748b', background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-subtle)' }}>
           No scheduled lecture slots match the selected filters. Click "Schedule Lecture Slot" to add one.
         </div>
       ) : viewMode === 'grid' ? (
-        /* WEEKLY GRID VIEW */
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem' }}>
-          {daysOfWeek.map((day) => {
-            const daySlots = timetableByDay[day] || [];
-            if (filterDay !== 'ALL' && filterDay !== day) return null;
+        /* REAL COLLEGE WEEKLY TIMETABLE TABLE */
+        <div className="table-container" style={{ overflowX: 'auto', borderRadius: '16px', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
+          <table className="data-table" style={{ width: '100%', minWidth: '920px', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: 'rgba(255, 255, 255, 0.03)' }}>
+                <th style={{ width: '150px', textAlign: 'left', padding: '1rem', borderRight: '1px solid var(--border-subtle)', color: '#94a3b8' }}>
+                  Time Slot
+                </th>
+                {daysOfWeek.map((day) => {
+                  if (filterDay !== 'ALL' && filterDay !== day) return null;
+                  return (
+                    <th key={day} style={{ textAlign: 'center', padding: '1rem', borderRight: '1px solid var(--border-subtle)', color: '#fff', fontSize: '0.92rem', fontWeight: 700 }}>
+                      {day}
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              {activeTimeSlots.map((slot) => (
+                <tr key={slot.start} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                  {/* Left Column: Time Slot */}
+                  <td style={{
+                    padding: '1rem',
+                    borderRight: '1px solid var(--border-subtle)',
+                    background: 'rgba(255, 255, 255, 0.015)',
+                    verticalAlign: 'middle'
+                  }}>
+                    <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.85rem' }}>{slot.label}</div>
+                    <div style={{ fontSize: '0.72rem', color: '#818cf8', fontWeight: 600, marginTop: '2px' }}>{slot.period}</div>
+                  </td>
 
-            return (
-              <div
-                key={day}
-                style={{
-                  background: 'var(--bg-card)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: '16px',
-                  overflow: 'hidden',
-                  display: 'flex',
-                  flexDirection: 'column'
-                }}
-              >
-                {/* Day Header */}
-                <div style={{
-                  padding: '1rem 1.25rem',
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  borderBottom: '1px solid var(--border-subtle)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between'
-                }}>
-                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#fff' }}>{day}</h3>
-                  <span style={{ fontSize: '0.75rem', color: '#818cf8', fontWeight: 600, background: 'rgba(99, 102, 241, 0.15)', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>
-                    {daySlots.length} Slots
-                  </span>
-                </div>
+                  {/* Day Columns */}
+                  {daysOfWeek.map((day) => {
+                    if (filterDay !== 'ALL' && filterDay !== day) return null;
 
-                {/* Day Slots List */}
-                <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1 }}>
-                  {daySlots.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#64748b', fontSize: '0.85rem' }}>
-                      No lectures scheduled for {day}
-                    </div>
-                  ) : (
-                    daySlots.map((slot) => (
-                      <div
-                        key={slot.id}
+                    // Match slot item
+                    const slotItem = timetables.find((t) => {
+                      if (t.dayOfWeek !== day) return false;
+                      // Time overlap check
+                      return (
+                        (t.startTime <= slot.start && t.endTime > slot.start) ||
+                        (t.startTime < slot.end && t.endTime >= slot.end) ||
+                        (t.startTime >= slot.start && t.endTime <= slot.end)
+                      );
+                    });
+
+                    const isLab = slotItem && (
+                      (slotItem.classroomType && slotItem.classroomType.toLowerCase().includes('lab')) ||
+                      (slotItem.subjectName && slotItem.subjectName.toLowerCase().includes('lab'))
+                    );
+
+                    return (
+                      <td
+                        key={day}
                         style={{
-                          background: 'rgba(255, 255, 255, 0.02)',
-                          border: '1px solid var(--border-subtle)',
-                          borderRadius: '12px',
-                          padding: '1rem',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '0.4rem',
-                          transition: 'all 0.2s ease',
-                          position: 'relative'
+                          padding: '0.65rem',
+                          borderRight: '1px solid var(--border-subtle)',
+                          verticalAlign: 'top',
+                          minWidth: '150px'
                         }}
                       >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#818cf8', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                            <Clock size={12} /> {slot.startTime} – {slot.endTime}
-                          </span>
-                          <div style={{ display: 'flex', gap: '0.35rem' }}>
-                            <button className="btn-icon" onClick={() => handleOpenEdit(slot)} title="Edit Slot">
-                              <Edit2 size={12} />
-                            </button>
-                            <button className="btn-icon btn-icon-danger" onClick={() => handleDeleteClick(slot)} title="Delete Slot">
-                              <Trash2 size={12} />
-                            </button>
+                        {slotItem ? (
+                          <div style={{
+                            padding: '0.75rem',
+                            borderRadius: '10px',
+                            background: isLab ? 'rgba(168, 85, 247, 0.08)' : 'rgba(99, 102, 241, 0.08)',
+                            border: isLab ? '1px solid rgba(168, 85, 247, 0.3)' : '1px solid rgba(99, 102, 241, 0.3)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.35rem',
+                            minHeight: '88px',
+                            transition: 'all 0.2s ease',
+                            position: 'relative'
+                          }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.25rem' }}>
+                              <span style={{ fontWeight: 700, color: '#fff', fontSize: '0.88rem', lineHeight: 1.25 }}>
+                                {slotItem.subjectName}
+                              </span>
+                              {isLab && (
+                                <span style={{
+                                  fontSize: '0.65rem',
+                                  fontWeight: 800,
+                                  padding: '0.1rem 0.4rem',
+                                  borderRadius: '4px',
+                                  background: 'rgba(168, 85, 247, 0.25)',
+                                  color: '#c084fc',
+                                  border: '1px solid rgba(168, 85, 247, 0.4)',
+                                  whiteSpace: 'nowrap'
+                                }}>
+                                  LAB
+                                </span>
+                              )}
+                            </div>
+
+                            <div style={{ fontSize: '0.76rem', color: '#06b6d4', fontWeight: 600 }}>
+                              {slotItem.facultyName || 'Professor'}
+                            </div>
+
+                            <div style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              marginTop: 'auto',
+                              paddingTop: '0.35rem',
+                              borderTop: '1px solid rgba(255, 255, 255, 0.06)'
+                            }}>
+                              <span style={{ fontSize: '0.74rem', color: '#10b981', fontWeight: 700 }}>
+                                {slotItem.roomNumber}
+                              </span>
+                              <div style={{ display: 'inline-flex', gap: '0.25rem' }}>
+                                <button className="btn-icon" style={{ padding: '0.2rem', width: '22px', height: '22px' }} onClick={() => handleOpenEdit(slotItem)} title="Edit Slot">
+                                  <Edit2 size={11} />
+                                </button>
+                                <button className="btn-icon btn-icon-danger" style={{ padding: '0.2rem', width: '22px', height: '22px' }} onClick={() => handleDeleteClick(slotItem)} title="Delete Slot">
+                                  <Trash2 size={11} />
+                                </button>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-
-                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#fff', margin: '0.1rem 0' }}>
-                          {slot.subjectName || 'General Lecture'}
-                        </h4>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', fontSize: '0.75rem', color: '#cbd5e1' }}>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#06b6d4' }}>
-                            <Users2 size={12} /> {slot.facultyName || 'Assigned Professor'}
-                          </span>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#10b981' }}>
-                            <Building2 size={12} /> {slot.roomNumber || 'Room'}
-                          </span>
-                        </div>
-
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.72rem', color: '#64748b', marginTop: '0.25rem' }}>
-                          <span>Cohort: {slot.year}-{slot.division}</span>
-                          <span>{slot.classroomType}</span>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            );
-          })}
+                        ) : (
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            minHeight: '88px',
+                            color: '#475569',
+                            fontSize: '0.8rem',
+                            fontWeight: 500,
+                            background: 'rgba(255, 255, 255, 0.01)',
+                            borderRadius: '8px',
+                            border: '1px dashed rgba(255, 255, 255, 0.04)'
+                          }}>
+                            Free
+                          </div>
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       ) : (
         /* LIST / TABLE VIEW */

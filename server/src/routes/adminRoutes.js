@@ -31,7 +31,9 @@ import {
   createDepartment,
   updateDepartment,
   deleteDepartment,
-  toggleDepartmentStatus
+  toggleDepartmentStatus,
+  getFacultyTimetableAdmin,
+  getFacultyAvailability
 } from '../controllers/adminController.js';
 import { verifyToken } from '../middleware/authMiddleware.js';
 import { authorizeRoles } from '../middleware/roleMiddleware.js';
@@ -84,8 +86,10 @@ router.post('/timetable', createTimetable);
 router.put('/timetable/:id', updateTimetable);
 router.delete('/timetable/:id', deleteTimetable);
 
-// 8. Classroom Availability Foundation
+// 8. Classroom Availability & Faculty Availability Foundations
 router.get('/classroom-availability', getClassroomAvailability);
+router.get('/faculty-availability', getFacultyAvailability);
+router.get('/faculty-timetable', getFacultyTimetableAdmin);
 
 // 9. Admin Notifications & Campus Broadcasts
 router.get('/notifications', getAdminNotifications);

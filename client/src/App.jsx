@@ -18,7 +18,9 @@ import ClassroomManagement from './pages/admin/ClassroomManagement';
 import ClassSectionManagement from './pages/admin/ClassSectionManagement';
 import DepartmentManagement from './pages/admin/DepartmentManagement';
 import ClassroomAvailability from './pages/admin/ClassroomAvailability';
+import FacultyAvailability from './pages/admin/FacultyAvailability';
 import TimetableManagement from './pages/admin/TimetableManagement';
+import FacultyTimetableManagement from './pages/admin/FacultyTimetableManagement';
 import AdminNotifications from './pages/admin/AdminNotifications';
 import AdminProfile from './pages/admin/AdminProfile';
 
@@ -50,7 +52,10 @@ export default function App() {
         <Route path="classrooms" element={<ClassroomManagement />} />
         <Route path="classes" element={<ClassSectionManagement />} />
         <Route path="classroom-availability" element={<ClassroomAvailability />} />
+        <Route path="faculty-availability" element={<FacultyAvailability />} />
         <Route path="timetable" element={<TimetableManagement />} />
+        <Route path="student-timetable" element={<TimetableManagement />} />
+        <Route path="faculty-timetable" element={<FacultyTimetableManagement />} />
         <Route path="notifications" element={<AdminNotifications />} />
         <Route path="profile" element={<AdminProfile />} />
       </Route>

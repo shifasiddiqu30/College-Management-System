@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { db, queryAll, queryOne, execute } from '../config/db.js';
+import { getFacultyRealtimeStatus, getClassroomRealtimeStatus, timeToMinutes } from '../utils/timetableHelper.js';
 import { ROLES, USER_STATUS, CLASSROOM_STATUS, CLASSROOM_TYPES, ACADEMIC_YEARS, DIVISIONS, DEPARTMENTS } from '../config/constants.js';
-import { getFacultyRealtimeStatus, getClassroomRealtimeStatus } from '../utils/timetableHelper.js';
 
 // Helper: Generate unique IDs
 function generateId(prefix = 'id') {
@@ -1846,4 +1846,231 @@ export async function toggleDepartmentStatus(req, res, next) {
     next(error);
   }
 }
+
+/**
+ * Admin Faculty Timetable
+ * GET /api/admin/faculty-timetable
+ */
+export async function getFacultyTimetableAdmin(req, res, next) {
+  try {
+    const { facultyId, department, q } = req.query;
+
+    let facultySql = `
+      SELECT id, name, email, department, status, assigned_subjects as assignedSubjects, assigned_classes as assignedClasses
+      FROM users
+      WHERE role = 'FACULTY'
+    `;
+    const facultyParams = [];
+
+    if (department && department !== 'ALL') {
+      facultySql += ` AND department = ?`;
+      facultyParams.push(department);
+    }
+
+    if (q && q.trim()) {
+      facultySql += ` AND (LOWER(name) LIKE ? OR LOWER(email) LIKE ?)`;
+      facultyParams.push(`%${q.trim().toLowerCase()}%`, `%${q.trim().toLowerCase()}%`);
+    }
+
+    facultySql += ` ORDER BY name ASC`;
+    const facultyMembers = queryAll(facultySql, facultyParams).map(f => ({
+      ...f,
+      assignedSubjects: typeof f.assignedSubjects === 'string' ? JSON.parse(f.assignedSubjects || '[]') : (f.assignedSubjects || []),
+      assignedClasses: typeof f.assignedClasses === 'string' ? JSON.parse(f.assignedClasses || '[]') : (f.assignedClasses || [])
+    }));
+
+    const targetFacultyId = facultyId || (facultyMembers.length > 0 ? facultyMembers[0].id : null);
+    let selectedFaculty = null;
+    let timetables = [];
+
+    if (targetFacultyId) {
+      selectedFaculty = queryOne(`
+        SELECT id, name, email, department, status
+        FROM users WHERE id = ? AND role = 'FACULTY'
+      `, [targetFacultyId]);
+
+      const ttSql = `
+        SELECT 
+          t.id,
+          t.class_id as classId,
+          t.day_of_week as dayOfWeek,
+          t.period_number as periodNumber,
+          t.start_time as startTime,
+          t.end_time as endTime,
+          t.academic_year as academicYear,
+          t.semester,
+          s.id as subjectId,
+          s.name as subjectName,
+          s.code as subjectCode,
+          s.credits,
+          c.id as classId,
+          c.department as classDepartment,
+          c.year as classYear,
+          c.division as classDivision,
+          cl.id as classroomId,
+          cl.room_number as roomNumber,
+          cl.classroom_type as classroomType,
+          cl.building,
+          cl.floor,
+          cl.has_projector as hasProjector
+        FROM timetables t
+        LEFT JOIN subjects s ON t.subject_id = s.id
+        LEFT JOIN classes c ON t.class_id = c.id
+        LEFT JOIN classrooms cl ON t.classroom_id = cl.id
+        WHERE t.faculty_id = ?
+        ORDER BY t.start_time ASC
+      `;
+      timetables = queryAll(ttSql, [targetFacultyId]).map(t => {
+        const isLab = (t.classroomType && t.classroomType.toLowerCase().includes('lab')) ||
+                      (t.subjectName && t.subjectName.toLowerCase().includes('lab'));
+        return {
+          ...t,
+          isLab: !!isLab
+        };
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      facultyMembers,
+      selectedFaculty,
+      timetables
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Admin Faculty Availability Matrix
+ * GET /api/admin/faculty-availability
+ */
+export async function getFacultyAvailability(req, res, next) {
+  try {
+    const { date, day, time, startTime, endTime, department, search, availability } = req.query;
+
+    let dayOfWeek = day || 'Monday';
+    if (date) {
+      const parsedDate = new Date(date);
+      if (!isNaN(parsedDate.getTime())) {
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        dayOfWeek = days[parsedDate.getDay()];
+      }
+    }
+
+    const targetStart = startTime || time || '10:00';
+    const targetEnd = endTime || (startTime ? (parseInt(startTime.split(':')[0], 10) + 1).toString().padStart(2, '0') + ':00' : '11:00');
+    const startMins = timeToMinutes(targetStart);
+    const endMins = timeToMinutes(targetEnd);
+
+    let facultySql = `
+      SELECT id, name, email, department, status
+      FROM users
+      WHERE role = 'FACULTY'
+    `;
+    const facultyParams = [];
+
+    if (department && department !== 'ALL') {
+      facultySql += ` AND department = ?`;
+      facultyParams.push(department);
+    }
+
+    if (search && search.trim()) {
+      facultySql += ` AND (LOWER(name) LIKE ? OR LOWER(email) LIKE ?)`;
+      const term = `%${search.trim().toLowerCase()}%`;
+      facultyParams.push(term, term);
+    }
+
+    facultySql += ` ORDER BY name ASC`;
+    const allFaculty = queryAll(facultySql, facultyParams);
+
+    const daySlots = queryAll(`
+      SELECT 
+        t.id as timetableId,
+        t.faculty_id as facultyId,
+        t.start_time as startTime,
+        t.end_time as endTime,
+        t.day_of_week as dayOfWeek,
+        s.name as subjectName,
+        s.code as subjectCode,
+        cl.room_number as roomNumber,
+        cl.classroom_type as classroomType,
+        c.department as classDepartment,
+        c.year as classYear,
+        c.division as classDivision
+      FROM timetables t
+      LEFT JOIN subjects s ON t.subject_id = s.id
+      LEFT JOIN classrooms cl ON t.classroom_id = cl.id
+      LEFT JOIN classes c ON t.class_id = c.id
+      WHERE t.day_of_week = ?
+    `, [dayOfWeek]);
+
+    let occupiedCount = 0;
+    let availableCount = 0;
+
+    const facultyList = allFaculty.map(faculty => {
+      const activeSlot = daySlots.find(slot => {
+        if (slot.facultyId !== faculty.id) return false;
+        const sMins = timeToMinutes(slot.startTime);
+        const eMins = timeToMinutes(slot.endTime);
+        return sMins < endMins && eMins > startMins;
+      });
+
+      const isOccupied = !!activeSlot;
+      if (isOccupied) {
+        occupiedCount++;
+      } else {
+        availableCount++;
+      }
+
+      const isLab = activeSlot ? (
+        (activeSlot.classroomType && activeSlot.classroomType.toLowerCase().includes('lab')) ||
+        (activeSlot.subjectName && activeSlot.subjectName.toLowerCase().includes('lab'))
+      ) : false;
+
+      return {
+        id: faculty.id,
+        name: faculty.name,
+        email: faculty.email,
+        department: faculty.department,
+        accountStatus: faculty.status,
+        status: isOccupied ? 'OCCUPIED' : 'AVAILABLE',
+        currentActivity: activeSlot ? {
+          subjectName: activeSlot.subjectName || activeSlot.subjectCode,
+          subjectCode: activeSlot.subjectCode,
+          class: `${activeSlot.classYear || 'SE'}-${activeSlot.classDivision || 'A'}`,
+          department: activeSlot.classDepartment || faculty.department,
+          roomNumber: activeSlot.roomNumber || 'TBD',
+          classroomType: activeSlot.classroomType || 'Classroom',
+          isLab,
+          startTime: activeSlot.startTime,
+          endTime: activeSlot.endTime,
+          display: `${activeSlot.subjectName} — ${activeSlot.classYear}-${activeSlot.classDivision} — ${activeSlot.roomNumber} (${activeSlot.startTime}–${activeSlot.endTime})`
+        } : null
+      };
+    });
+
+    let filteredFaculty = facultyList;
+    if (availability && availability !== 'ALL') {
+      filteredFaculty = facultyList.filter(f => f.status === availability.toUpperCase());
+    }
+
+    res.status(200).json({
+      success: true,
+      dayOfWeek,
+      selectedDate: date || new Date().toISOString().split('T')[0],
+      startTime: targetStart,
+      endTime: targetEnd,
+      summary: {
+        totalFaculty: allFaculty.length,
+        occupiedFaculty: occupiedCount,
+        availableFaculty: availableCount
+      },
+      faculty: filteredFaculty
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 
