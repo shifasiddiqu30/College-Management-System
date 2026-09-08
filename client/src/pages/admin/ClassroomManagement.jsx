@@ -17,9 +17,12 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import ConfirmModal from '../../components/admin/ConfirmModal';
+import DepartmentFolderTabs from '../../components/common/DepartmentFolderTabs';
+import { useNavigate } from 'react-router-dom';
 
 export default function ClassroomManagement() {
   const { authFetch, showToast } = useAuth();
+  const navigate = useNavigate();
 
   const [classrooms, setClassrooms] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,6 +34,7 @@ export default function ClassroomManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('ALL');
   const [filterStatus, setFilterStatus] = useState('ALL');
+  const [filterLectureStatus, setFilterLectureStatus] = useState('ALL');
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -78,6 +82,7 @@ export default function ClassroomManagement() {
       if (searchQuery.trim()) queryParams.append('q', searchQuery.trim());
       if (filterType !== 'ALL') queryParams.append('type', filterType);
       if (filterStatus !== 'ALL') queryParams.append('status', filterStatus);
+      if (filterLectureStatus !== 'ALL') queryParams.append('lectureStatus', filterLectureStatus);
 
       const res = await authFetch(`/api/admin/classrooms?${queryParams.toString()}`);
       const data = await res.json();
@@ -89,7 +94,7 @@ export default function ClassroomManagement() {
     } finally {
       setLoading(false);
     }
-  }, [authFetch, searchQuery, filterType, filterStatus, showToast]);
+  }, [authFetch, searchQuery, filterType, filterStatus, filterLectureStatus, showToast]);
 
   useEffect(() => {
     fetchClassrooms();
@@ -252,9 +257,19 @@ export default function ClassroomManagement() {
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
           >
-            <option value="ALL">All Status</option>
+            <option value="ALL">All Room Status</option>
             <option value="Active">Active</option>
             <option value="Inactive">Inactive</option>
+          </select>
+
+          <select
+            className="filter-select"
+            value={filterLectureStatus}
+            onChange={(e) => setFilterLectureStatus(e.target.value)}
+          >
+            <option value="ALL">All Lecture Statuses</option>
+            <option value="ACTIVE">🔴 Occupied (Active Lecture)</option>
+            <option value="INACTIVE">🟢 Available (Free)</option>
           </select>
         </div>
       </div>
@@ -266,102 +281,156 @@ export default function ClassroomManagement() {
             <thead>
               <tr>
                 <th>Room Identifier</th>
-                <th>Type</th>
+                <th>Type & Equipment</th>
                 <th>Building & Floor</th>
-                <th>Seating Capacity</th>
-                <th>Equipment</th>
-                <th>Status</th>
+                <th>Capacity</th>
+                <th>Room Status</th>
+                <th>Live Lecture Status</th>
+                <th>Current Activity (Real-Time)</th>
                 <th style={{ textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+                  <td colSpan="8" style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
                     Loading classroom records...
                   </td>
                 </tr>
               ) : classrooms.length === 0 ? (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>
+                  <td colSpan="8" style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>
                     No classrooms found matching criteria.
                   </td>
                 </tr>
               ) : (
-                classrooms.map((room) => (
-                  <tr key={room.id}>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                        <div style={{
-                          width: '34px',
-                          height: '34px',
-                          borderRadius: '8px',
-                          background: 'rgba(99, 102, 241, 0.15)',
-                          border: '1px solid rgba(99, 102, 241, 0.25)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: '#818cf8',
-                          fontWeight: 700,
-                          fontSize: '0.82rem'
-                        }}>
-                          <Building2 size={18} />
+                classrooms.map((room) => {
+                  const isOccupied = room.currentLectureStatus === 'ACTIVE' || room.availabilityStatus === 'OCCUPIED';
+                  return (
+                    <tr key={room.id}>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                          <div style={{
+                            width: '34px',
+                            height: '34px',
+                            borderRadius: '8px',
+                            background: 'rgba(99, 102, 241, 0.15)',
+                            border: '1px solid rgba(99, 102, 241, 0.25)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#818cf8',
+                            fontWeight: 700,
+                            fontSize: '0.82rem'
+                          }}>
+                            <Building2 size={18} />
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.92rem' }}>{room.roomNumber}</div>
+                            <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>ID: {room.id}</div>
+                          </div>
                         </div>
-                        <div>
-                          <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.92rem' }}>{room.roomNumber}</div>
-                          <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>ID: {room.id}</div>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                          <span className="tag-pill" style={{ background: 'rgba(255, 255, 255, 0.05)', color: '#cbd5e1' }}>
+                            {room.classroomType}
+                          </span>
+                          {room.hasProjector ? (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.72rem', color: '#10b981' }}>
+                              <CheckCircle2 size={13} /> Projector
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: '0.72rem', color: '#64748b' }}>Standard</span>
+                          )}
                         </div>
-                      </div>
-                    </td>
-                    <td>
-                      <span className="tag-pill" style={{ background: 'rgba(255, 255, 255, 0.05)', color: '#cbd5e1' }}>
-                        {room.classroomType}
-                      </span>
-                    </td>
-                    <td>
-                      <div style={{ fontSize: '0.85rem', color: '#f8fafc', fontWeight: 500 }}>{room.building}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{room.floor}</div>
-                    </td>
-                    <td>
-                      <span style={{ fontWeight: 700, color: '#fff', fontSize: '0.95rem' }}>
-                        {room.capacity}
-                      </span>
-                      <span style={{ fontSize: '0.75rem', color: '#94a3b8', marginLeft: '0.25rem' }}>Seats</span>
-                    </td>
-                    <td>
-                      {room.hasProjector ? (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', color: '#10b981' }}>
-                          <CheckCircle2 size={14} /> Projector
+                      </td>
+                      <td>
+                        <div style={{ fontSize: '0.85rem', color: '#f8fafc', fontWeight: 500 }}>{room.building}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{room.floor}</div>
+                      </td>
+                      <td>
+                        <span style={{ fontWeight: 700, color: '#fff', fontSize: '0.95rem' }}>
+                          {room.capacity}
                         </span>
-                      ) : (
-                        <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Standard</span>
-                      )}
-                    </td>
-                    <td>
-                      <span className={`badge badge-${room.status === 'Active' ? 'active' : 'inactive'}`}>
-                        {room.status}
-                      </span>
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'inline-flex', gap: '0.5rem' }}>
-                        <button
-                          className="btn-icon"
-                          onClick={() => handleOpenEdit(room)}
-                          title="Edit Classroom"
-                        >
-                          <Edit2 size={16} />
-                        </button>
-                        <button
-                          className="btn-icon btn-icon-danger"
-                          onClick={() => handleDeleteClick(room)}
-                          title="Delete Classroom"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                        <span style={{ fontSize: '0.75rem', color: '#94a3b8', marginLeft: '0.25rem' }}>Seats</span>
+                      </td>
+
+                      {/* Room Operating Status */}
+                      <td>
+                        <span className={`badge badge-${room.status === 'Active' ? 'active' : 'inactive'}`}>
+                          {room.status}
+                        </span>
+                      </td>
+
+                      {/* Live Lecture Status */}
+                      <td>
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          padding: '0.25rem 0.65rem',
+                          borderRadius: '9999px',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          background: isOccupied ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                          border: `1px solid ${isOccupied ? 'rgba(239, 68, 68, 0.4)' : 'rgba(16, 185, 129, 0.4)'}`,
+                          color: isOccupied ? '#f87171' : '#34d399'
+                        }}>
+                          <span style={{
+                            width: '7px',
+                            height: '7px',
+                            borderRadius: '50%',
+                            background: isOccupied ? '#ef4444' : '#10b981',
+                            boxShadow: isOccupied ? '0 0 8px #ef4444' : '0 0 8px #10b981'
+                          }} />
+                          {isOccupied ? 'OCCUPIED' : 'AVAILABLE'}
+                        </span>
+                      </td>
+
+                      {/* Current Activity */}
+                      <td>
+                        {room.currentActivity ? (
+                          <div style={{ fontSize: '0.8rem', lineHeight: 1.4 }}>
+                            <div style={{ fontWeight: 700, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                              <span>{room.currentActivity.subjectName}</span>
+                              <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>({room.currentActivity.subjectCode})</span>
+                            </div>
+                            <div style={{ fontSize: '0.74rem', color: '#cbd5e1' }}>
+                              {room.currentActivity.year} {room.currentActivity.department} - Div {room.currentActivity.division}
+                            </div>
+                            <div style={{ fontSize: '0.72rem', color: '#818cf8', fontWeight: 600 }}>
+                              Faculty: {room.currentActivity.facultyName} • {room.currentActivity.startTime} - {room.currentActivity.endTime}
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                            No active lecture
+                          </div>
+                        )}
+                      </td>
+
+                      <td style={{ textAlign: 'right' }}>
+                        <div style={{ display: 'inline-flex', gap: '0.5rem' }}>
+                          <button
+                            className="btn-icon"
+                            onClick={() => handleOpenEdit(room)}
+                            title="Edit Classroom"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button
+                            className="btn-icon btn-icon-danger"
+                            onClick={() => handleDeleteClick(room)}
+                            title="Delete Classroom"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

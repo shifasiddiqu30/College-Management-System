@@ -5,6 +5,7 @@ import {
   getFacultyProfile,
   
   // Timetable & Availability
+  getFacultyDepartmentFolders,
   getFacultyTimetable,
   getFacultyClassroomAvailability,
 
@@ -75,6 +76,7 @@ router.get('/dashboard-stats', getFacultyDashboardStats);
 router.get('/profile', getFacultyProfile);
 
 // 2. Timetable & Classroom Availability
+router.get('/departments', getFacultyDepartmentFolders);
 router.get('/timetable', getFacultyTimetable);
 router.get('/classroom-availability', getFacultyClassroomAvailability);
 

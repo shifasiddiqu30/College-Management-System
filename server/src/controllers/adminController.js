@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { db, queryAll, queryOne, execute } from '../config/db.js';
 import { ROLES, USER_STATUS, CLASSROOM_STATUS, CLASSROOM_TYPES, ACADEMIC_YEARS, DIVISIONS, DEPARTMENTS } from '../config/constants.js';
+import { getFacultyRealtimeStatus, getClassroomRealtimeStatus } from '../utils/timetableHelper.js';
 
 // Helper: Generate unique IDs
 function generateId(prefix = 'id') {
@@ -22,7 +23,9 @@ export async function getAdminDashboardStats(req, res, next) {
     const totalFaculty = queryOne('SELECT COUNT(*) as count FROM users WHERE role = ?', [ROLES.FACULTY])?.count || 0;
     const totalClassrooms = queryOne('SELECT COUNT(*) as count FROM classrooms')?.count || 0;
     const totalActiveRooms = queryOne('SELECT COUNT(*) as count FROM classrooms WHERE status = ?', [CLASSROOM_STATUS.ACTIVE])?.count || 0;
-    const totalDepartments = queryOne('SELECT COUNT(*) as count FROM departments')?.count || 0;
+    // Dynamic active departments count from database
+    const totalDepartments = queryOne("SELECT COUNT(*) as count FROM departments WHERE status = 'Active'")?.count || 0;
+    const totalAllDepartments = queryOne('SELECT COUNT(*) as count FROM departments')?.count || 0;
     const totalClasses = queryOne('SELECT COUNT(*) as count FROM classes')?.count || 0;
     const totalTimetableSlots = queryOne('SELECT COUNT(*) as count FROM timetables')?.count || 0;
 
@@ -332,7 +335,7 @@ export async function deleteStudent(req, res, next) {
 
 export async function getFaculty(req, res, next) {
   try {
-    const { q, department, status } = req.query;
+    const { q, department, status, lectureStatus } = req.query;
 
     let sql = `
       SELECT id, name, email, role, department, assigned_subjects, assigned_classes, status, created_at as createdAt, updated_at as updatedAt
@@ -361,7 +364,7 @@ export async function getFaculty(req, res, next) {
 
     const rawFaculty = queryAll(sql, params);
 
-    const faculty = rawFaculty.map(f => {
+    let faculty = rawFaculty.map(f => {
       let assignedSubjects = [];
       let assignedClasses = [];
       try {
@@ -370,6 +373,10 @@ export async function getFaculty(req, res, next) {
       } catch (e) {
         // ignore
       }
+
+      // Calculate real-time lecture status from official timetable
+      const realtime = getFacultyRealtimeStatus(f.id);
+
       return {
         id: f.id,
         name: f.name,
@@ -378,11 +385,18 @@ export async function getFaculty(req, res, next) {
         department: f.department,
         assignedSubjects: Array.isArray(assignedSubjects) ? assignedSubjects : [],
         assignedClasses: Array.isArray(assignedClasses) ? assignedClasses : [],
-        status: f.status,
+        status: f.status, // Account Status: ACTIVE / SUSPENDED / INACTIVE
+        lectureStatus: realtime.lectureStatus, // Lecture Status: ACTIVE / INACTIVE
+        currentActivity: realtime.currentActivity,
+        upcomingActivity: realtime.upcomingActivity,
         createdAt: f.createdAt,
         updatedAt: f.updatedAt
       };
     });
+
+    if (lectureStatus && lectureStatus.trim() && lectureStatus !== 'ALL') {
+      faculty = faculty.filter(f => f.lectureStatus === lectureStatus.trim().toUpperCase());
+    }
 
     res.status(200).json({
       success: true,
@@ -553,7 +567,7 @@ export async function deleteFaculty(req, res, next) {
 
 export async function getClassrooms(req, res, next) {
   try {
-    const { q, type, status } = req.query;
+    const { q, type, status, lectureStatus, availability } = req.query;
 
     let sql = `
       SELECT id, room_number as roomNumber, classroom_type as classroomType, building, floor, capacity, status, has_projector as hasProjector, is_available as isAvailable, created_at as createdAt, updated_at as updatedAt
@@ -580,7 +594,29 @@ export async function getClassrooms(req, res, next) {
 
     sql += ` ORDER BY room_number ASC`;
 
-    const classrooms = queryAll(sql, params);
+    const rawClassrooms = queryAll(sql, params);
+
+    let classrooms = rawClassrooms.map(room => {
+      // Real-time classroom activity from official timetable
+      const realtime = getClassroomRealtimeStatus(room.id);
+
+      return {
+        ...room,
+        // Administrative status remains unchanged (room.status)
+        currentLectureStatus: realtime.currentLectureStatus, // 'ACTIVE' | 'INACTIVE'
+        availabilityStatus: realtime.availabilityStatus,     // 'OCCUPIED' | 'AVAILABLE'
+        currentActivity: realtime.currentActivity,
+        upcomingActivity: realtime.upcomingActivity
+      };
+    });
+
+    if (lectureStatus && lectureStatus.trim() && lectureStatus !== 'ALL') {
+      classrooms = classrooms.filter(c => c.currentLectureStatus === lectureStatus.trim().toUpperCase());
+    }
+
+    if (availability && availability.trim() && availability !== 'ALL') {
+      classrooms = classrooms.filter(c => c.availabilityStatus === availability.trim().toUpperCase());
+    }
 
     res.status(200).json({
       success: true,
@@ -1553,3 +1589,261 @@ export async function markAllAdminNotificationsRead(req, res, next) {
     next(error);
   }
 }
+
+// ============================================================================
+// DEPARTMENT MANAGEMENT
+// ============================================================================
+
+/**
+ * Get All Departments (with counts and filters)
+ * GET /api/admin/departments
+ */
+export async function getDepartments(req, res, next) {
+  try {
+    const { q, status } = req.query;
+
+    let sql = `
+      SELECT id, name, code, hod_name as hodName, status, created_at as createdAt, updated_at as updatedAt
+      FROM departments
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (q && q.trim()) {
+      sql += ` AND (LOWER(name) LIKE ? OR LOWER(code) LIKE ? OR LOWER(hod_name) LIKE ?)`;
+      const term = `%${q.trim().toLowerCase()}%`;
+      params.push(term, term, term);
+    }
+
+    if (status && status.trim() && status !== 'ALL') {
+      sql += ` AND status = ?`;
+      params.push(status.trim());
+    }
+
+    sql += ` ORDER BY status ASC, name ASC`;
+
+    const rawDepartments = queryAll(sql, params);
+
+    const departments = rawDepartments.map(dept => {
+      const studentCount = queryOne("SELECT COUNT(*) as count FROM users WHERE role = 'STUDENT' AND department = ?", [dept.name])?.count || 0;
+      const facultyCount = queryOne("SELECT COUNT(*) as count FROM users WHERE role = 'FACULTY' AND department = ?", [dept.name])?.count || 0;
+      const classCount = queryOne("SELECT COUNT(*) as count FROM classes WHERE department = ?", [dept.name])?.count || 0;
+      const subjectCount = queryOne("SELECT COUNT(*) as count FROM subjects WHERE department = ?", [dept.name])?.count || 0;
+      const canDelete = (studentCount === 0 && facultyCount === 0 && classCount === 0 && subjectCount === 0);
+
+      return {
+        ...dept,
+        studentCount,
+        facultyCount,
+        classCount,
+        subjectCount,
+        canDelete
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      count: departments.length,
+      activeCount: departments.filter(d => d.status === 'Active').length,
+      departments
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Create New Department
+ * POST /api/admin/departments
+ */
+export async function createDepartment(req, res, next) {
+  try {
+    const { name, code, hodName, status = 'Active' } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, message: 'Department name is required (e.g. Computer Engineering).' });
+    }
+    if (!code || !code.trim()) {
+      return res.status(400).json({ success: false, message: 'Department code is required (e.g. CE).' });
+    }
+
+    const cleanName = name.trim();
+    const cleanCode = code.trim().toUpperCase();
+    const cleanHod = hodName ? hodName.trim() : '';
+
+    // Check uniqueness of name
+    const existingName = queryOne('SELECT id FROM departments WHERE LOWER(name) = ?', [cleanName.toLowerCase()]);
+    if (existingName) {
+      return res.status(400).json({ success: false, message: `Department '${cleanName}' already exists.` });
+    }
+
+    // Check uniqueness of code
+    const existingCode = queryOne('SELECT id FROM departments WHERE UPPER(code) = ?', [cleanCode]);
+    if (existingCode) {
+      return res.status(400).json({ success: false, message: `Department code '${cleanCode}' already exists.` });
+    }
+
+    const id = generateId(`dept_${cleanCode.toLowerCase()}`);
+    execute(`
+      INSERT INTO departments (id, name, code, hod_name, status, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    `, [id, cleanName, cleanCode, cleanHod, status === 'Inactive' ? 'Inactive' : 'Active']);
+
+    const created = queryOne('SELECT id, name, code, hod_name as hodName, status, created_at as createdAt, updated_at as updatedAt FROM departments WHERE id = ?', [id]);
+
+    res.status(201).json({
+      success: true,
+      message: `Department '${cleanName}' added successfully.`,
+      department: created
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Update Existing Department (Propagates name changes safely)
+ * PUT /api/admin/departments/:id
+ */
+export async function updateDepartment(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { name, code, hodName, status } = req.body;
+
+    const department = queryOne('SELECT * FROM departments WHERE id = ?', [id]);
+    if (!department) {
+      return res.status(404).json({ success: false, message: 'Department not found.' });
+    }
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, message: 'Department name is required.' });
+    }
+    if (!code || !code.trim()) {
+      return res.status(400).json({ success: false, message: 'Department code is required.' });
+    }
+
+    const cleanName = name.trim();
+    const cleanCode = code.trim().toUpperCase();
+    const cleanHod = hodName !== undefined ? hodName.trim() : department.hod_name;
+    const cleanStatus = status !== undefined ? status : department.status;
+
+    // Check duplicate name on other departments
+    const duplicateName = queryOne('SELECT id FROM departments WHERE LOWER(name) = ? AND id != ?', [cleanName.toLowerCase(), id]);
+    if (duplicateName) {
+      return res.status(400).json({ success: false, message: `Department '${cleanName}' is already taken.` });
+    }
+
+    // Check duplicate code on other departments
+    const duplicateCode = queryOne('SELECT id FROM departments WHERE UPPER(code) = ? AND id != ?', [cleanCode, id]);
+    if (duplicateCode) {
+      return res.status(400).json({ success: false, message: `Department code '${cleanCode}' is already taken.` });
+    }
+
+    const oldName = department.name;
+
+    // If department name changed, cascade name updates across related tables
+    if (oldName !== cleanName) {
+      execute('UPDATE users SET department = ? WHERE department = ?', [cleanName, oldName]);
+      execute('UPDATE classes SET department = ? WHERE department = ?', [cleanName, oldName]);
+      execute('UPDATE subjects SET department = ? WHERE department = ?', [cleanName, oldName]);
+      try {
+        execute('UPDATE academic_performance SET department = ? WHERE department = ?', [cleanName, oldName]);
+      } catch (e) {
+        // Table might not have records
+      }
+    }
+
+    execute(`
+      UPDATE departments SET
+        name = ?,
+        code = ?,
+        hod_name = ?,
+        status = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `, [cleanName, cleanCode, cleanHod, cleanStatus, id]);
+
+    const updated = queryOne('SELECT id, name, code, hod_name as hodName, status, created_at as createdAt, updated_at as updatedAt FROM departments WHERE id = ?', [id]);
+
+    res.status(200).json({
+      success: true,
+      message: `Department '${cleanName}' updated successfully.`,
+      department: updated
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Delete Department (Safe delete check)
+ * DELETE /api/admin/departments/:id
+ */
+export async function deleteDepartment(req, res, next) {
+  try {
+    const { id } = req.params;
+    const department = queryOne('SELECT * FROM departments WHERE id = ?', [id]);
+    if (!department) {
+      return res.status(404).json({ success: false, message: 'Department not found.' });
+    }
+
+    const studentCount = queryOne("SELECT COUNT(*) as count FROM users WHERE role = 'STUDENT' AND department = ?", [department.name])?.count || 0;
+    const facultyCount = queryOne("SELECT COUNT(*) as count FROM users WHERE role = 'FACULTY' AND department = ?", [department.name])?.count || 0;
+    const classCount = queryOne("SELECT COUNT(*) as count FROM classes WHERE department = ?", [department.name])?.count || 0;
+    const subjectCount = queryOne("SELECT COUNT(*) as count FROM subjects WHERE department = ?", [department.name])?.count || 0;
+
+    const totalDependencies = studentCount + facultyCount + classCount + subjectCount;
+
+    if (totalDependencies > 0) {
+      return res.status(400).json({
+        success: false,
+        isInUse: true,
+        message: `This department is currently in use (${studentCount} students, ${facultyCount} faculty, ${classCount} classes, ${subjectCount} subjects) and cannot be deleted. You can deactivate it instead.`,
+        dependencies: {
+          students: studentCount,
+          faculty: facultyCount,
+          classes: classCount,
+          subjects: subjectCount
+        }
+      });
+    }
+
+    execute('DELETE FROM departments WHERE id = ?', [id]);
+
+    res.status(200).json({
+      success: true,
+      message: `Department '${department.name}' deleted successfully.`
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Toggle Department Status (Active / Inactive)
+ * PATCH /api/admin/departments/:id/status
+ */
+export async function toggleDepartmentStatus(req, res, next) {
+  try {
+    const { id } = req.params;
+    const department = queryOne('SELECT * FROM departments WHERE id = ?', [id]);
+    if (!department) {
+      return res.status(404).json({ success: false, message: 'Department not found.' });
+    }
+
+    const newStatus = (req.body && req.body.status) ? req.body.status : (department.status === 'Active' ? 'Inactive' : 'Active');
+    execute('UPDATE departments SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [newStatus, id]);
+
+    const updated = queryOne('SELECT id, name, code, hod_name as hodName, status, created_at as createdAt, updated_at as updatedAt FROM departments WHERE id = ?', [id]);
+
+    res.status(200).json({
+      success: true,
+      message: `Department '${department.name}' is now ${newStatus}.`,
+      status: newStatus,
+      department: updated
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+

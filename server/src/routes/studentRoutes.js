@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   getStudentDashboardStats,
   getStudentProfile,
+  getStudentDepartmentFolders,
   getStudentTimetable,
   getStudentAcademicPerformance,
   getStudentDoubtPages,
@@ -43,6 +44,7 @@ router.get('/dashboard-stats', getStudentDashboardStats);
 router.get('/profile', getStudentProfile);
 
 // 2. Timetable (Strictly scoped to student's class on backend)
+router.get('/departments', getStudentDepartmentFolders);
 router.get('/timetable', getStudentTimetable);
 
 // 3. Academic Performance (Strict 1:1 privacy)

@@ -46,6 +46,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import FacultySidebar from '../../components/faculty/FacultySidebar';
 import FacultyHeader from '../../components/faculty/FacultyHeader';
+import DepartmentFolderTabs from '../../components/common/DepartmentFolderTabs';
 
 const LF_CATEGORIES = ['All Categories', 'Electronics', 'ID Cards & Documents', 'Books & Stationery', 'Accessories & Bags', 'Keys & Wallets', 'Clothing', 'Other'];
 
@@ -80,6 +81,26 @@ export default function FacultyDashboard() {
   // Tab-Specific States
   // Timetable Tab
   const [selectedDay, setSelectedDay] = useState(new Date().toLocaleDateString('en-US', { weekday: 'long' }) === 'Sunday' ? 'Monday' : new Date().toLocaleDateString('en-US', { weekday: 'long' }));
+  const [facultyTtDept, setFacultyTtDept] = useState('ALL');
+  const [ttLoading, setTtLoading] = useState(false);
+
+  const fetchFacultyTimetable = useCallback(async (dept = facultyTtDept) => {
+    setTtLoading(true);
+    try {
+      const url = dept && dept !== 'ALL'
+        ? `/api/faculty/timetable?department=${encodeURIComponent(dept)}`
+        : '/api/faculty/timetable';
+      const res = await authFetch(url);
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setTimetableData(data);
+      }
+    } catch (err) {
+      console.error('Error fetching faculty timetable:', err);
+    } finally {
+      setTtLoading(false);
+    }
+  }, [authFetch, facultyTtDept]);
 
   // Personal Schedule Tab
   const [personalTasks, setPersonalTasks] = useState([]);
@@ -1205,6 +1226,17 @@ export default function FacultyDashboard() {
           {activeTab === 'timetable' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               
+              {/* Branch / Department Folder Tabs */}
+              <DepartmentFolderTabs
+                endpoint="/api/faculty/departments"
+                selectedDepartment={facultyTtDept}
+                onSelectDepartment={(dept) => {
+                  setFacultyTtDept(dept);
+                  fetchFacultyTimetable(dept);
+                }}
+                showAllOption={true}
+              />
+
               {/* Day Selector Tabs */}
               <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
                 {daysOfWeek.map(day => (

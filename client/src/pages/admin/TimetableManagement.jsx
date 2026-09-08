@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import ConfirmModal from '../../components/admin/ConfirmModal';
+import DepartmentFolderTabs from '../../components/common/DepartmentFolderTabs';
 
 export default function TimetableManagement() {
   const { authFetch, showToast } = useAuth();
@@ -281,6 +282,13 @@ export default function TimetableManagement() {
           </button>
         </div>
       </div>
+
+      {/* Branch / Department Folder Tabs */}
+      <DepartmentFolderTabs
+        selectedDepartment={filterDept}
+        onSelectDepartment={(dept) => setFilterDept(dept)}
+        showAllOption={true}
+      />
 
       {/* Filter Toolbar */}
       <div className="toolbar">

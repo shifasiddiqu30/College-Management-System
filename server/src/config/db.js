@@ -31,6 +31,10 @@ export function initDB() {
       }
     };
 
+    // Departments Migrations
+    addColumnIfMissing('departments', 'status', "TEXT NOT NULL DEFAULT 'Active'");
+    addColumnIfMissing('departments', 'updated_at', "DATETIME");
+
     // Classrooms Migrations
     addColumnIfMissing('classrooms', 'classroom_type', "TEXT NOT NULL DEFAULT 'Classroom'");
     addColumnIfMissing('classrooms', 'floor', "TEXT NOT NULL DEFAULT '1st Floor'");

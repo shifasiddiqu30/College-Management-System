@@ -12,20 +12,20 @@ export async function seedDatabase() {
 
   // 1. Seed Departments
   const sampleDepartments = [
-    { id: 'dept_ce', name: 'Computer Engineering', code: 'CE', hod_name: 'Dr. Arthur Pendelton' },
-    { id: 'dept_it', name: 'Information Technology', code: 'IT', hod_name: 'Dr. Rebecca Sterling' },
-    { id: 'dept_extc', name: 'Electronics & Telecommunication', code: 'EXTC', hod_name: 'Dr. Vikramaditya Rao' },
-    { id: 'dept_me', name: 'Mechanical Engineering', code: 'ME', hod_name: 'Dr. Harold Finch' },
-    { id: 'dept_civil', name: 'Civil Engineering', code: 'CIVIL', hod_name: 'Dr. Maya Lin' },
-    { id: 'dept_aids', name: 'Artificial Intelligence & Data Science', code: 'AI&DS', hod_name: 'Dr. Alan Turing' }
+    { id: 'dept_ce', name: 'Computer Engineering', code: 'CE', hod_name: 'Dr. Arthur Pendelton', status: 'Active' },
+    { id: 'dept_it', name: 'Information Technology', code: 'IT', hod_name: 'Dr. Rebecca Sterling', status: 'Active' },
+    { id: 'dept_extc', name: 'Electronics & Telecommunication', code: 'EXTC', hod_name: 'Dr. Vikramaditya Rao', status: 'Active' },
+    { id: 'dept_me', name: 'Mechanical Engineering', code: 'ME', hod_name: 'Dr. Harold Finch', status: 'Active' },
+    { id: 'dept_civil', name: 'Civil Engineering', code: 'CIVIL', hod_name: 'Dr. Maya Lin', status: 'Active' },
+    { id: 'dept_aids', name: 'Artificial Intelligence & Data Science', code: 'AI&DS', hod_name: 'Dr. Alan Turing', status: 'Active' }
   ];
 
   const deptStmt = db.prepare(`
-    INSERT OR REPLACE INTO departments (id, name, code, hod_name) 
-    VALUES (?, ?, ?, ?)
+    INSERT OR REPLACE INTO departments (id, name, code, hod_name, status) 
+    VALUES (?, ?, ?, ?, ?)
   `);
   for (const dept of sampleDepartments) {
-    deptStmt.run(dept.id, dept.name, dept.code, dept.hod_name);
+    deptStmt.run(dept.id, dept.name, dept.code, dept.hod_name, dept.status || 'Active');
   }
 
   // 2. Seed Academic Subjects

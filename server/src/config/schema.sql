@@ -34,7 +34,9 @@ CREATE TABLE IF NOT EXISTS departments (
     name TEXT UNIQUE NOT NULL,
     code TEXT UNIQUE NOT NULL,
     hod_name TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    status TEXT NOT NULL DEFAULT 'Active' CHECK(status IN ('Active', 'Inactive')),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Classrooms & Infrastructure

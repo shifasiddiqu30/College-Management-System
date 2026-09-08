@@ -16,6 +16,7 @@ import StudentManagement from './pages/admin/StudentManagement';
 import FacultyManagement from './pages/admin/FacultyManagement';
 import ClassroomManagement from './pages/admin/ClassroomManagement';
 import ClassSectionManagement from './pages/admin/ClassSectionManagement';
+import DepartmentManagement from './pages/admin/DepartmentManagement';
 import ClassroomAvailability from './pages/admin/ClassroomAvailability';
 import TimetableManagement from './pages/admin/TimetableManagement';
 import AdminNotifications from './pages/admin/AdminNotifications';
@@ -43,6 +44,7 @@ export default function App() {
       >
         <Route index element={<Navigate to="/admin/dashboard" replace />} />
         <Route path="dashboard" element={<AdminDashboard />} />
+        <Route path="departments" element={<DepartmentManagement />} />
         <Route path="students" element={<StudentManagement />} />
         <Route path="faculty" element={<FacultyManagement />} />
         <Route path="classrooms" element={<ClassroomManagement />} />

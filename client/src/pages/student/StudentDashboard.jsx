@@ -47,6 +47,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import StudentSidebar from '../../components/student/StudentSidebar';
 import StudentHeader from '../../components/student/StudentHeader';
+import DepartmentFolderTabs from '../../components/common/DepartmentFolderTabs';
 
 const LF_CATEGORIES = [
   'All Categories',
@@ -1036,6 +1037,14 @@ export default function StudentDashboard() {
           {activeTab === 'timetable' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               
+              {/* Branch / Department Folder Tabs */}
+              <DepartmentFolderTabs
+                endpoint="/api/student/departments"
+                selectedDepartment={user?.department || 'Computer Engineering'}
+                onSelectDepartment={() => {}}
+                showAllOption={false}
+              />
+
               {/* Cohort Scoping Notification Banner */}
               <div
                 style={{

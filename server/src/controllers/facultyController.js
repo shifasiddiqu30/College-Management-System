@@ -197,13 +197,30 @@ export async function getFacultyProfile(req, res, next) {
 // ============================================================================
 
 /**
+/**
+ * Get Active Department Folders for Weekly Timetable
+ * GET /api/faculty/departments
+ */
+export async function getFacultyDepartmentFolders(req, res, next) {
+  try {
+    const departments = queryAll("SELECT id, name, code, hod_name as hodName FROM departments WHERE status = 'Active' ORDER BY name ASC");
+    res.status(200).json({
+      success: true,
+      departments
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
  * Get Faculty Assigned Timetable
  * GET /api/faculty/timetable
  */
 export async function getFacultyTimetable(req, res, next) {
   try {
     const faculty = req.user;
-    const { day, classId, subjectId } = req.query;
+    const { day, classId, subjectId, department, year, division } = req.query;
 
     let sql = `
       SELECT 
@@ -248,6 +265,18 @@ export async function getFacultyTimetable(req, res, next) {
     if (subjectId && subjectId !== 'ALL') {
       sql += ` AND t.subject_id = ?`;
       params.push(subjectId);
+    }
+    if (department && department !== 'ALL') {
+      sql += ` AND c.department = ?`;
+      params.push(department.trim());
+    }
+    if (year && year !== 'ALL') {
+      sql += ` AND c.year = ?`;
+      params.push(year.trim());
+    }
+    if (division && division !== 'ALL') {
+      sql += ` AND c.division = ?`;
+      params.push(division.trim().toUpperCase());
     }
 
     sql += ` ORDER BY 

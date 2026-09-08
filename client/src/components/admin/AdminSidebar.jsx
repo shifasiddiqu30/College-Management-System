@@ -11,7 +11,8 @@ import {
   Bell,
   UserCheck,
   LogOut,
-  Sparkles
+  Sparkles,
+  Landmark
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -26,6 +27,7 @@ export default function AdminSidebar({ isMobileOpen, closeMobileSidebar }) {
 
   const navItems = [
     { label: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
+    { label: 'Departments', path: '/admin/departments', icon: Landmark },
     { label: 'Students', path: '/admin/students', icon: GraduationCap },
     { label: 'Faculty', path: '/admin/faculty', icon: Users2 },
     { label: 'Classrooms', path: '/admin/classrooms', icon: Building2 },

@@ -40,6 +40,23 @@ function safeJsonParse(val, fallback = []) {
 // ============================================================================
 
 /**
+ * Get Active Department Folders for Weekly Timetable
+ * GET /api/student/departments
+ */
+export async function getStudentDepartmentFolders(req, res, next) {
+  try {
+    const departments = queryAll("SELECT id, name, code, hod_name as hodName FROM departments WHERE status = 'Active' ORDER BY name ASC");
+    res.status(200).json({
+      success: true,
+      departments,
+      studentDepartment: req.user.department
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
  * Get Student Timetable, Current Class, Next Class & Weekly Grid
  * GET /api/student/timetable
  * STRICT PRIVACY: Scoped exclusively to req.user.department + req.user.year + req.user.division
@@ -225,6 +242,11 @@ export async function getStudentTimetable(req, res, next) {
       },
       classInfo: {
         id: studentClass.id,
+        department: studentClass.department,
+        year: studentClass.year,
+        division: studentClass.division
+      },
+      cohort: {
         department: studentClass.department,
         year: studentClass.year,
         division: studentClass.division

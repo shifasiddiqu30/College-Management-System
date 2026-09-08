@@ -13,7 +13,8 @@ import {
   AlertCircle,
   ArrowRight,
   TrendingUp,
-  Server
+  Server,
+  Landmark
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -102,12 +103,17 @@ export default function AdminDashboard() {
         </div>
 
         {/* Total Departments */}
-        <div className="stat-card" style={{ '--stat-color': '#a855f7' }}>
+        <div
+          className="stat-card"
+          style={{ '--stat-color': '#a855f7', cursor: 'pointer' }}
+          onClick={() => navigate('/admin/departments')}
+          title="Click to manage departments"
+        >
           <div className="stat-info">
             <div className="stat-label">Total Departments</div>
             <div className="stat-value">{stats?.totalDepartments ?? 0}</div>
             <div className="stat-desc">
-              <span>{stats?.totalClasses ?? 0} Class Sections</span>
+              <span style={{ color: '#a855f7' }}>● {stats?.totalClasses ?? 0} Class Sections</span>
             </div>
           </div>
           <div className="stat-icon-wrapper" style={{ color: '#a855f7' }}>
@@ -133,7 +139,11 @@ export default function AdminDashboard() {
           <p style={{ fontSize: '0.82rem', color: '#94a3b8' }}>Fast-track student enrollment, faculty onboarding and room scheduling</p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <button className="btn btn-primary" onClick={() => navigate('/admin/students')}>
+          <button className="btn btn-primary" onClick={() => navigate('/admin/departments')}>
+            <Landmark size={16} />
+            <span>Manage Departments</span>
+          </button>
+          <button className="btn btn-secondary" onClick={() => navigate('/admin/students')}>
             <UserPlus size={16} />
             <span>Manage Students</span>
           </button>

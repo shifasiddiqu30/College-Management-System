@@ -33,6 +33,7 @@ export default function FacultyManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterDept, setFilterDept] = useState('ALL');
   const [filterStatus, setFilterStatus] = useState('ALL');
+  const [filterLectureStatus, setFilterLectureStatus] = useState('ALL');
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -83,6 +84,7 @@ export default function FacultyManagement() {
       if (searchQuery.trim()) queryParams.append('q', searchQuery.trim());
       if (filterDept !== 'ALL') queryParams.append('department', filterDept);
       if (filterStatus !== 'ALL') queryParams.append('status', filterStatus);
+      if (filterLectureStatus !== 'ALL') queryParams.append('lectureStatus', filterLectureStatus);
 
       const res = await authFetch(`/api/admin/faculty?${queryParams.toString()}`);
       const data = await res.json();
@@ -94,7 +96,7 @@ export default function FacultyManagement() {
     } finally {
       setLoading(false);
     }
-  }, [authFetch, searchQuery, filterDept, filterStatus, showToast]);
+  }, [authFetch, searchQuery, filterDept, filterStatus, filterLectureStatus, showToast]);
 
   useEffect(() => {
     fetchFaculty();
@@ -267,10 +269,20 @@ export default function FacultyManagement() {
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
           >
-            <option value="ALL">All Status</option>
-            <option value="ACTIVE">Active</option>
+            <option value="ALL">All Account Status</option>
+            <option value="ACTIVE">Active Account</option>
             <option value="SUSPENDED">Suspended</option>
             <option value="PENDING">Pending</option>
+          </select>
+
+          <select
+            className="filter-select"
+            value={filterLectureStatus}
+            onChange={(e) => setFilterLectureStatus(e.target.value)}
+          >
+            <option value="ALL">All Lecture Statuses</option>
+            <option value="ACTIVE">🟢 In Lecture (Active)</option>
+            <option value="INACTIVE">⚪ Available (Inactive)</option>
           </select>
         </div>
       </div>
@@ -283,95 +295,146 @@ export default function FacultyManagement() {
               <tr>
                 <th>Faculty Member</th>
                 <th>Department</th>
-                <th>Assigned Subjects</th>
-                <th>Assigned Classes</th>
-                <th>Status</th>
+                <th>Assigned Curriculum</th>
+                <th>Account Status</th>
+                <th>Lecture Status</th>
+                <th>Current Activity (Real-Time)</th>
                 <th style={{ textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="6" style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
                     Loading faculty records...
                   </td>
                 </tr>
               ) : facultyList.length === 0 ? (
                 <tr>
-                  <td colSpan="6" style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>
                     No faculty match your criteria.
                   </td>
                 </tr>
               ) : (
-                facultyList.map((faculty) => (
-                  <tr key={faculty.id}>
-                    <td>
-                      <div className="user-cell">
-                        <div className="cell-avatar" style={{ background: 'linear-gradient(135deg, #06b6d4, #3b82f6)' }}>
-                          {faculty.name.charAt(0)}
+                facultyList.map((faculty) => {
+                  const isInLecture = faculty.lectureStatus === 'ACTIVE';
+                  return (
+                    <tr key={faculty.id}>
+                      <td>
+                        <div className="user-cell">
+                          <div className="cell-avatar" style={{ background: 'linear-gradient(135deg, #06b6d4, #3b82f6)' }}>
+                            {faculty.name.charAt(0)}
+                          </div>
+                          <div className="cell-info">
+                            <div className="cell-name">{faculty.name}</div>
+                            <div className="cell-sub">{faculty.email}</div>
+                          </div>
                         </div>
-                        <div className="cell-info">
-                          <div className="cell-name">{faculty.name}</div>
-                          <div className="cell-sub">{faculty.email}</div>
+                      </td>
+                      <td>
+                        <span style={{ fontSize: '0.85rem', color: '#cbd5e1', fontWeight: 500 }}>
+                          {faculty.department}
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', maxWidth: '240px' }}>
+                          <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
+                            {faculty.assignedSubjects && faculty.assignedSubjects.length > 0 ? (
+                              faculty.assignedSubjects.map((sub, idx) => (
+                                <span key={idx} className="tag-pill" style={{ background: 'rgba(99, 102, 241, 0.1)', color: '#818cf8', borderColor: 'rgba(99, 102, 241, 0.2)', fontSize: '0.72rem' }}>
+                                  {sub}
+                                </span>
+                              ))
+                            ) : (
+                              <span style={{ fontSize: '0.75rem', color: '#64748b' }}>No subjects</span>
+                            )}
+                          </div>
+                          <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
+                            {faculty.assignedClasses && faculty.assignedClasses.map((cls, idx) => (
+                              <span key={idx} style={{ fontSize: '0.7rem', color: '#94a3b8', background: 'rgba(255,255,255,0.05)', padding: '0.1rem 0.35rem', borderRadius: '4px' }}>
+                                {cls}
+                              </span>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td>
-                      <span style={{ fontSize: '0.85rem', color: '#cbd5e1', fontWeight: 500 }}>
-                        {faculty.department}
-                      </span>
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', maxWidth: '280px' }}>
-                        {faculty.assignedSubjects && faculty.assignedSubjects.length > 0 ? (
-                          faculty.assignedSubjects.map((sub, idx) => (
-                            <span key={idx} className="tag-pill" style={{ background: 'rgba(99, 102, 241, 0.1)', color: '#818cf8', borderColor: 'rgba(99, 102, 241, 0.2)' }}>
-                              {sub}
-                            </span>
-                          ))
+                      </td>
+
+                      {/* Account Status (Independent) */}
+                      <td>
+                        <span className={`badge badge-${faculty.status?.toLowerCase()}`}>
+                          {faculty.status}
+                        </span>
+                      </td>
+
+                      {/* Real-Time Lecture Status */}
+                      <td>
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          padding: '0.25rem 0.65rem',
+                          borderRadius: '9999px',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          background: isInLecture ? 'rgba(16, 185, 129, 0.15)' : 'rgba(100, 116, 139, 0.15)',
+                          border: `1px solid ${isInLecture ? 'rgba(16, 185, 129, 0.4)' : 'rgba(100, 116, 139, 0.3)'}`,
+                          color: isInLecture ? '#10b981' : '#94a3b8'
+                        }}>
+                          <span style={{
+                            width: '6px',
+                            height: '6px',
+                            borderRadius: '50%',
+                            background: isInLecture ? '#10b981' : '#64748b',
+                            boxShadow: isInLecture ? '0 0 8px #10b981' : 'none'
+                          }} />
+                          <span>{isInLecture ? 'ACTIVE' : 'INACTIVE'}</span>
+                        </span>
+                      </td>
+
+                      {/* Current Activity */}
+                      <td>
+                        {faculty.currentActivity ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#10b981' }}>
+                              {faculty.currentActivity.subject}
+                            </div>
+                            <div style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
+                              {faculty.currentActivity.class} • Room {faculty.currentActivity.room} • {faculty.currentActivity.startTime}–{faculty.currentActivity.endTime}
+                            </div>
+                          </div>
                         ) : (
-                          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>None assigned</span>
+                          <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                            <span>No current lecture</span>
+                            {faculty.upcomingActivity && (
+                              <div style={{ fontSize: '0.72rem', color: '#06b6d4', marginTop: '0.1rem' }}>
+                                Upcoming: {faculty.upcomingActivity.subject} ({faculty.upcomingActivity.startTime})
+                              </div>
+                            )}
+                          </div>
                         )}
-                      </div>
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
-                        {faculty.assignedClasses && faculty.assignedClasses.length > 0 ? (
-                          faculty.assignedClasses.map((cls, idx) => (
-                            <span key={idx} className="tag-pill" style={{ fontWeight: 600, color: '#f8fafc' }}>
-                              {cls}
-                            </span>
-                          ))
-                        ) : (
-                          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>None</span>
-                        )}
-                      </div>
-                    </td>
-                    <td>
-                      <span className={`badge badge-${faculty.status?.toLowerCase()}`}>
-                        {faculty.status}
-                      </span>
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'inline-flex', gap: '0.5rem' }}>
-                        <button
-                          className="btn-icon"
-                          onClick={() => handleOpenEdit(faculty)}
-                          title="Edit Faculty"
-                        >
-                          <Edit2 size={16} />
-                        </button>
-                        <button
-                          className="btn-icon btn-icon-danger"
-                          onClick={() => handleDeleteClick(faculty)}
-                          title="Delete Faculty"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+
+                      <td style={{ textAlign: 'right' }}>
+                        <div style={{ display: 'inline-flex', gap: '0.5rem' }}>
+                          <button
+                            className="btn-icon"
+                            onClick={() => handleOpenEdit(faculty)}
+                            title="Edit Faculty"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button
+                            className="btn-icon btn-icon-danger"
+                            onClick={() => handleDeleteClick(faculty)}
+                            title="Delete Faculty"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
