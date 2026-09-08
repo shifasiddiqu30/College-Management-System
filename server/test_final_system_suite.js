@@ -364,15 +364,21 @@ async function runFinalTestSuite() {
     const rTTList = await request('/admin/timetable', { token: adminToken });
     assert(rTTList.status === 200 && Array.isArray(rTTList.data.timetables), 'Admin retrieved full master timetable');
 
-    // Conflict 1: Classroom Overlap (Room 301 on Monday 10:00 - 11:00 is occupied by CS301 Java)
+    // Clean up any previous test slots on Saturday to ensure test idempotency
+    const prevTestSlots = (rTTList.data.timetables || []).filter(t => t.dayOfWeek === 'Saturday');
+    for (const pts of prevTestSlots) {
+      await request(`/admin/timetable/${pts.id}`, { method: 'DELETE', token: adminToken });
+    }
+
+    // Conflict 1: Classroom Overlap (FF101 on Monday 09:15 - 10:15 is occupied by MCE)
     const rConfRoom = await request('/admin/timetable', {
       method: 'POST',
       token: adminToken,
       body: {
         dayOfWeek: 'Monday',
-        startTime: '10:30',
-        endTime: '11:30',
-        classroomId: 'crm_301',
+        startTime: '09:30',
+        endTime: '10:30',
+        classroomId: 'crm_ff101',
         facultyId: 'usr_fac_cs_002',
         classId: 'cls_ce_te_a',
         subjectId: 'sub_dbms'
@@ -380,30 +386,30 @@ async function runFinalTestSuite() {
     });
     assert(rConfRoom.status === 400 && rConfRoom.data.conflictType === 'ROOM_CONFLICT', 'Classroom overlap conflict detected & blocked (ROOM_CONFLICT)');
 
-    // Conflict 2: Faculty Overlap (Sharma Ma'am is teaching Monday 10:00 - 11:00 in Room 301; test in unoccupied Room 303)
+    // Conflict 2: Faculty Overlap (Ms. Shaheen Khan is teaching Monday 09:15 - 10:15; test in unoccupied Room 303)
     const rConfFac = await request('/admin/timetable', {
       method: 'POST',
       token: adminToken,
       body: {
         dayOfWeek: 'Monday',
-        startTime: '10:15',
-        endTime: '10:45',
+        startTime: '09:30',
+        endTime: '10:00',
         classroomId: 'crm_303',
-        facultyId: 'usr_fac_sharma_001',
+        facultyId: 'usr_fac_sjk_001',
         classId: 'cls_ce_te_a',
         subjectId: 'sub_dbms'
       }
     });
     assert(rConfFac.status === 400 && rConfFac.data.conflictType === 'FACULTY_CONFLICT', 'Faculty overlap conflict detected & blocked (FACULTY_CONFLICT)');
 
-    // Conflict 3: Class / Division Overlap (SE-B is scheduled Monday 10:00 - 11:00; test in unoccupied Room 303 with Prof. Connor)
+    // Conflict 3: Class / Division Overlap (SE-B is scheduled Monday 09:15 - 10:15; test in unoccupied Room 303 with Prof. Connor)
     const rConfClass = await request('/admin/timetable', {
       method: 'POST',
       token: adminToken,
       body: {
         dayOfWeek: 'Monday',
-        startTime: '10:15',
-        endTime: '10:45',
+        startTime: '09:30',
+        endTime: '10:00',
         classroomId: 'crm_303',
         facultyId: 'usr_fac_me_003',
         classId: 'cls_ce_se_b',
@@ -442,22 +448,23 @@ async function runFinalTestSuite() {
         subjectId: 'sub_java'
       }
     });
-    assert(rCreateTT.status === 201 && rCreateTT.data.timetable && rCreateTT.data.timetable.id, 'Clash-free timetable slot scheduled successfully');
+    if (rCreateTT.status !== 201) console.log('   rCreateTT error details:', rCreateTT.status, rCreateTT.data);
+    assert(rCreateTT.status === 201 && rCreateTT.data.timetable && rCreateTT.data.timetable.id, 'Clash-free timetable slot scheduled successfully', JSON.stringify(rCreateTT.data));
     const createdTTId = rCreateTT.data.timetable?.id;
 
     // Verify Student Timetable Privacy: Student 1 (SE-B) sees this new slot on Saturday
     const rStuTT = await request('/student/timetable', { token: studentToken1 });
     assert(rStuTT.status === 200 && rStuTT.data.weeklyGrid.Saturday.some(s => s.id === createdTTId), 'Student 1 (SE-B) automatically reflects scheduled timetable slot');
 
-    // Verify Student Timetable Security: Student 2 (TE-A) does NOT see SE-B Saturday slot
+    // Verify Cohort Isolation: Student 2 (TE-A) does NOT see this SE-B slot
     const rStu2TT = await request('/student/timetable', { token: studentToken2 });
-    assert(rStu2TT.status === 200 && !rStu2TT.data.weeklyGrid.Saturday.some(s => s.id === createdTTId), 'Student 2 (TE-A) strictly isolated from SE-B timetable slots');
+    assert(rStu2TT.status === 200 && !rStu2TT.data.weeklyGrid?.Saturday?.some(s => s.id === createdTTId), 'Student 2 (TE-A) strictly isolated from SE-B timetable slots');
 
-    // Verify Faculty Timetable: Prof. Sharma sees the slot in assigned schedule
+    // Assigned Faculty reflects scheduled timetable slot
     const rFacTT = await request('/faculty/timetable', { token: facultyToken1 });
-    assert(rFacTT.status === 200 && rFacTT.data.weeklyGrid.Saturday.some(s => s.id === createdTTId), 'Assigned Faculty reflects scheduled timetable slot');
+    assert(rFacTT.status === 200 && rFacTT.data.weeklyGrid?.Saturday?.some(s => s.id === createdTTId), 'Assigned Faculty reflects scheduled timetable slot');
 
-    // Cleanup test timetable slot
+    // Admin cleans up test timetable slot
     if (createdTTId) {
       const rDelTT = await request(`/admin/timetable/${createdTTId}`, {
         method: 'DELETE',
@@ -473,14 +480,14 @@ async function runFinalTestSuite() {
   console.log('\n🔹 SECTION 8: CLASSROOM AVAILABILITY MATRIX AUDIT');
   {
     // Admin checks availability
-    const rAdminAvail = await request('/admin/classroom-availability?day=Monday&startTime=10:00&endTime=11:00', { token: adminToken });
+    const rAdminAvail = await request('/admin/classroom-availability?day=Monday&startTime=09:30&endTime=10:00', { token: adminToken });
     assert(rAdminAvail.status === 200 && rAdminAvail.data.summary.total > 0, 'Admin can calculate classroom availability matrix');
 
-    // Room 301 is occupied Monday 10:00 - 11:00 by Java
-    const room301 = rAdminAvail.data.rooms.find(r => r.roomNumber === 'Room 301');
-    assert(room301 && room301.status === 'OCCUPIED' && room301.occupiedDetails, 'Room 301 accurately marked OCCUPIED during Monday 10:00-11:00 lecture');
+    // FF101 is occupied Monday 09:15 - 10:15
+    const roomFF101 = rAdminAvail.data.rooms.find(r => r.roomNumber === 'FF101');
+    assert(roomFF101 && roomFF101.status === 'OCCUPIED' && roomFF101.occupiedDetails, 'FF101 accurately marked OCCUPIED during Monday 09:30-10:00 lecture');
 
-    // Room 303 is available Monday 10:00 - 11:00
+    // Room 303 is available Monday 09:30 - 10:00
     const room303 = rAdminAvail.data.rooms.find(r => r.roomNumber === 'Room 303');
     assert(room303 && room303.status === 'AVAILABLE', 'Room 303 accurately marked AVAILABLE during vacancy period');
 

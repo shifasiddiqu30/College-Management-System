@@ -419,8 +419,8 @@ export default function TimetableManagement() {
                   {daysOfWeek.map((day) => {
                     if (filterDay !== 'ALL' && filterDay !== day) return null;
 
-                    // Match slot item
-                    const slotItem = timetables.find((t) => {
+                    // Match slot items (support multiple parallel lab batches)
+                    const slotItems = timetables.filter((t) => {
                       if (t.dayOfWeek !== day) return false;
                       // Time overlap check
                       return (
@@ -429,11 +429,6 @@ export default function TimetableManagement() {
                         (t.startTime >= slot.start && t.endTime <= slot.end)
                       );
                     });
-
-                    const isLab = slotItem && (
-                      (slotItem.classroomType && slotItem.classroomType.toLowerCase().includes('lab')) ||
-                      (slotItem.subjectName && slotItem.subjectName.toLowerCase().includes('lab'))
-                    );
 
                     return (
                       <td
@@ -445,63 +440,77 @@ export default function TimetableManagement() {
                           minWidth: '150px'
                         }}
                       >
-                        {slotItem ? (
-                          <div style={{
-                            padding: '0.75rem',
-                            borderRadius: '10px',
-                            background: isLab ? 'rgba(168, 85, 247, 0.08)' : 'rgba(99, 102, 241, 0.08)',
-                            border: isLab ? '1px solid rgba(168, 85, 247, 0.3)' : '1px solid rgba(99, 102, 241, 0.3)',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '0.35rem',
-                            minHeight: '88px',
-                            transition: 'all 0.2s ease',
-                            position: 'relative'
-                          }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.25rem' }}>
-                              <span style={{ fontWeight: 700, color: '#fff', fontSize: '0.88rem', lineHeight: 1.25 }}>
-                                {slotItem.subjectName}
-                              </span>
-                              {isLab && (
-                                <span style={{
-                                  fontSize: '0.65rem',
-                                  fontWeight: 800,
-                                  padding: '0.1rem 0.4rem',
-                                  borderRadius: '4px',
-                                  background: 'rgba(168, 85, 247, 0.25)',
-                                  color: '#c084fc',
-                                  border: '1px solid rgba(168, 85, 247, 0.4)',
-                                  whiteSpace: 'nowrap'
-                                }}>
-                                  LAB
-                                </span>
-                              )}
-                            </div>
+                        {slotItems.length > 0 ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                            {slotItems.map((slotItem) => {
+                              const isLab = (
+                                (slotItem.classroomType && slotItem.classroomType.toLowerCase().includes('lab')) ||
+                                (slotItem.subjectName && slotItem.subjectName.toLowerCase().includes('lab')) ||
+                                slotItem.isLab
+                              );
 
-                            <div style={{ fontSize: '0.76rem', color: '#06b6d4', fontWeight: 600 }}>
-                              {slotItem.facultyName || 'Professor'}
-                            </div>
+                              return (
+                                <div
+                                  key={slotItem.id}
+                                  style={{
+                                    padding: '0.65rem',
+                                    borderRadius: '10px',
+                                    background: isLab ? 'rgba(168, 85, 247, 0.08)' : 'rgba(99, 102, 241, 0.08)',
+                                    border: isLab ? '1px solid rgba(168, 85, 247, 0.3)' : '1px solid rgba(99, 102, 241, 0.3)',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '0.3rem',
+                                    transition: 'all 0.2s ease',
+                                    position: 'relative'
+                                  }}
+                                >
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.25rem' }}>
+                                    <span style={{ fontWeight: 700, color: '#fff', fontSize: '0.85rem', lineHeight: 1.25 }}>
+                                      {slotItem.subjectName}
+                                    </span>
+                                    {isLab && (
+                                      <span style={{
+                                        fontSize: '0.62rem',
+                                        fontWeight: 800,
+                                        padding: '0.1rem 0.35rem',
+                                        borderRadius: '4px',
+                                        background: 'rgba(168, 85, 247, 0.25)',
+                                        color: '#c084fc',
+                                        border: '1px solid rgba(168, 85, 247, 0.4)',
+                                        whiteSpace: 'nowrap'
+                                      }}>
+                                        LAB
+                                      </span>
+                                    )}
+                                  </div>
 
-                            <div style={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                              marginTop: 'auto',
-                              paddingTop: '0.35rem',
-                              borderTop: '1px solid rgba(255, 255, 255, 0.06)'
-                            }}>
-                              <span style={{ fontSize: '0.74rem', color: '#10b981', fontWeight: 700 }}>
-                                {slotItem.roomNumber}
-                              </span>
-                              <div style={{ display: 'inline-flex', gap: '0.25rem' }}>
-                                <button className="btn-icon" style={{ padding: '0.2rem', width: '22px', height: '22px' }} onClick={() => handleOpenEdit(slotItem)} title="Edit Slot">
-                                  <Edit2 size={11} />
-                                </button>
-                                <button className="btn-icon btn-icon-danger" style={{ padding: '0.2rem', width: '22px', height: '22px' }} onClick={() => handleDeleteClick(slotItem)} title="Delete Slot">
-                                  <Trash2 size={11} />
-                                </button>
-                              </div>
-                            </div>
+                                  <div style={{ fontSize: '0.74rem', color: '#06b6d4', fontWeight: 600 }}>
+                                    {slotItem.facultyName || 'Professor'}
+                                  </div>
+
+                                  <div style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    marginTop: 'auto',
+                                    paddingTop: '0.3rem',
+                                    borderTop: '1px solid rgba(255, 255, 255, 0.06)'
+                                  }}>
+                                    <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 700 }}>
+                                      {slotItem.roomNumber}
+                                    </span>
+                                    <div style={{ display: 'inline-flex', gap: '0.25rem' }}>
+                                      <button className="btn-icon" style={{ padding: '0.15rem', width: '20px', height: '20px' }} onClick={() => handleOpenEdit(slotItem)} title="Edit Slot">
+                                        <Edit2 size={11} />
+                                      </button>
+                                      <button className="btn-icon btn-icon-danger" style={{ padding: '0.15rem', width: '20px', height: '20px' }} onClick={() => handleDeleteClick(slotItem)} title="Delete Slot">
+                                        <Trash2 size={11} />
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         ) : (
                           <div style={{

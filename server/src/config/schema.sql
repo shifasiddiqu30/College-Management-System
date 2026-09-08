@@ -60,7 +60,7 @@ CREATE INDEX IF NOT EXISTS idx_classrooms_type ON classrooms(classroom_type);
 -- Academic Subjects
 CREATE TABLE IF NOT EXISTS subjects (
     id TEXT PRIMARY KEY,
-    code TEXT UNIQUE NOT NULL,
+    code TEXT NOT NULL,
     name TEXT NOT NULL,
     department TEXT NOT NULL,
     semester INTEGER,

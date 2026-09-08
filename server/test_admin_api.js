@@ -22,14 +22,14 @@ async function runTests() {
   console.log('✅ Student user verified:', student.name, student.email, 'Roll:', student.roll_number);
 
   // Test classroom exists
-  const room301 = queryOne("SELECT * FROM classrooms WHERE room_number = 'Room 301'");
-  if (!room301) throw new Error('Room 301 not found!');
-  console.log('✅ Classroom verified:', room301.room_number, room301.classroom_type);
+  const roomFF101 = queryOne("SELECT * FROM classrooms WHERE room_number = 'FF101'");
+  if (!roomFF101) throw new Error('FF101 not found!');
+  console.log('✅ Classroom verified:', roomFF101.room_number, roomFF101.classroom_type);
 
   // Test timetable mapping exists
-  const timetable = queryOne("SELECT * FROM timetables WHERE classroom_id = 'crm_301'");
-  if (!timetable) throw new Error('Timetable slot for Room 301 not found!');
-  console.log('✅ Timetable slot verified for Room 301:', timetable.day_of_week, timetable.start_time);
+  const timetable = queryOne("SELECT * FROM timetables WHERE classroom_id = 'crm_ff101'");
+  if (!timetable) throw new Error('Timetable slot for FF101 not found!');
+  console.log('✅ Timetable slot verified for FF101:', timetable.day_of_week, timetable.start_time);
 
   console.log('🎉 All backend seed & DB integrity tests passed!');
 }

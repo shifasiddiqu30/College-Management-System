@@ -181,46 +181,46 @@ async function runMasterTestSuite() {
     token: adminToken,
     body: {
       dayOfWeek: 'Monday',
-      startTime: '10:15',
-      endTime: '11:15',
+      startTime: '09:30',
+      endTime: '10:30',
       department: 'Computer Engineering',
       year: 'TE',
       division: 'A',
       subjectId: 'sub_cn',
       facultyId: fac2Login.body.user.id,
-      classroomId: 'crm_301' // Room 301
+      classroomId: 'crm_ff101' // FF101 is occupied Monday 09:15-10:15
     }
   });
   assert(roomConflict.status === 400 && (roomConflict.body.conflictType === 'ROOM_CONFLICT' || roomConflict.body.conflictType === 'CLASSROOM_CONFLICT'), 'Classroom overlap conflict detected and blocked');
 
   // 3.4 Timetable Conflict 2: Faculty Overlap Conflict
-  // Sharma Ma'am is already teaching on Monday 10:00 - 11:00 in Room 301
+  // Dr. Sanjay Sharma is teaching Monday 10:15 - 11:15 in FF101
   const facultyConflict = await apiRequest('/api/admin/timetable', {
     method: 'POST',
     token: adminToken,
     body: {
       dayOfWeek: 'Monday',
-      startTime: '10:15',
-      endTime: '10:45',
+      startTime: '10:30',
+      endTime: '11:00',
       department: 'Information Technology',
       year: 'SE',
       division: 'A',
       subjectId: 'sub_ds',
-      facultyId: facLogin.body.user.id, // Same faculty (Sharma Ma'am)
-      classroomId: 'crm_lab202' // Free room
+      facultyId: facLogin.body.user.id, // Dr. Sanjay Sharma
+      classroomId: 'crm_303' // Free room
     }
   });
   assert(facultyConflict.status === 400 && facultyConflict.body.conflictType === 'FACULTY_CONFLICT', 'Faculty overlap conflict detected and blocked');
 
   // 3.5 Timetable Conflict 3: Class/Division Overlap Conflict
-  // SE-B class already has a lecture on Monday 10:00 - 11:00
+  // SE-B class already has a lecture on Monday 09:15 - 10:15
   const classConflict = await apiRequest('/api/admin/timetable', {
     method: 'POST',
     token: adminToken,
     body: {
       dayOfWeek: 'Monday',
-      startTime: '10:00',
-      endTime: '11:00',
+      startTime: '09:30',
+      endTime: '10:00',
       department: 'Computer Engineering',
       year: 'SE',
       division: 'B', // Same class
