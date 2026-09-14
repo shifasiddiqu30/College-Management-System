@@ -402,165 +402,167 @@ export default function TimetableManagement() {
           <table className="data-table" style={{ width: '100%', minWidth: '920px', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: 'rgba(255, 255, 255, 0.03)' }}>
-                <th style={{ width: '150px', textAlign: 'left', padding: '1rem', borderRight: '1px solid var(--border-subtle)', color: '#94a3b8' }}>
-                  Time Slot
+                <th style={{ width: '140px', textAlign: 'left', padding: '1rem', borderRight: '1px solid var(--border-subtle)', color: '#94a3b8' }}>
+                  Day
                 </th>
-                {daysOfWeek.map((day) => {
-                  if (filterDay !== 'ALL' && filterDay !== day) return null;
-                  return (
-                    <th key={day} style={{ textAlign: 'center', padding: '1rem', borderRight: '1px solid var(--border-subtle)', color: '#fff', fontSize: '0.92rem', fontWeight: 700 }}>
-                      {day}
-                    </th>
-                  );
-                })}
+                {activeTimeSlots.map((slot) => (
+                  <th key={slot.start} style={{ textAlign: 'center', padding: '0.85rem', borderRight: '1px solid var(--border-subtle)', color: '#fff', fontSize: '0.88rem', fontWeight: 700, minWidth: '150px' }}>
+                    <div>{slot.label}</div>
+                    <div style={{ fontSize: '0.72rem', color: '#818cf8', fontWeight: 600, marginTop: '2px' }}>{slot.period}</div>
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {activeTimeSlots.map((slot) => (
-                <tr key={slot.start} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                  {/* Left Column: Time Slot */}
-                  <td style={{
-                    padding: '1rem',
-                    borderRight: '1px solid var(--border-subtle)',
-                    background: 'rgba(255, 255, 255, 0.015)',
-                    verticalAlign: 'middle'
-                  }}>
-                    <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.85rem' }}>{slot.label}</div>
-                    <div style={{ fontSize: '0.72rem', color: '#818cf8', fontWeight: 600, marginTop: '2px' }}>{slot.period}</div>
-                  </td>
+              {daysOfWeek.map((day) => {
+                if (filterDay !== 'ALL' && filterDay !== day) return null;
 
-                  {/* Day Columns */}
-                  {daysOfWeek.map((day) => {
-                    if (filterDay !== 'ALL' && filterDay !== day) return null;
+                return (
+                  <tr key={day} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                    {/* Left Column: Day */}
+                    <td style={{
+                      padding: '1rem',
+                      borderRight: '1px solid var(--border-subtle)',
+                      background: 'rgba(255, 255, 255, 0.015)',
+                      verticalAlign: 'middle',
+                      fontWeight: 700,
+                      color: '#fff',
+                      fontSize: '0.92rem'
+                    }}>
+                      {day}
+                    </td>
 
-                    // Match slot items (support multiple parallel lab batches)
-                    const slotItems = timetables.filter((t) => {
-                      if (t.dayOfWeek !== day) return false;
-                      // Time overlap check
+                    {/* Time Slot Columns */}
+                    {activeTimeSlots.map((slot) => {
+                      // Match slot items (support multiple parallel lab batches)
+                      const slotItems = timetables.filter((t) => {
+                        if (t.dayOfWeek !== day) return false;
+                        // Time overlap check
+                        return (
+                          (t.startTime <= slot.start && t.endTime > slot.start) ||
+                          (t.startTime < slot.end && t.endTime >= slot.end) ||
+                          (t.startTime >= slot.start && t.endTime <= slot.end)
+                        );
+                      });
+
                       return (
-                        (t.startTime <= slot.start && t.endTime > slot.start) ||
-                        (t.startTime < slot.end && t.endTime >= slot.end) ||
-                        (t.startTime >= slot.start && t.endTime <= slot.end)
-                      );
-                    });
+                        <td
+                          key={slot.start}
+                          style={{
+                            padding: '0.65rem',
+                            borderRight: '1px solid var(--border-subtle)',
+                            verticalAlign: 'top',
+                            minWidth: '150px'
+                          }}
+                        >
+                          {slotItems.length > 0 ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                              {slotItems.map((slotItem) => {
+                                const isLab = (
+                                  (slotItem.classroomType && slotItem.classroomType.toLowerCase().includes('lab')) ||
+                                  (slotItem.subjectName && slotItem.subjectName.toLowerCase().includes('lab')) ||
+                                  slotItem.isLab
+                                );
 
-                    return (
-                      <td
-                        key={day}
-                        style={{
-                          padding: '0.65rem',
-                          borderRight: '1px solid var(--border-subtle)',
-                          verticalAlign: 'top',
-                          minWidth: '150px'
-                        }}
-                      >
-                        {slotItems.length > 0 ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                            {slotItems.map((slotItem) => {
-                              const isLab = (
-                                (slotItem.classroomType && slotItem.classroomType.toLowerCase().includes('lab')) ||
-                                (slotItem.subjectName && slotItem.subjectName.toLowerCase().includes('lab')) ||
-                                slotItem.isLab
-                              );
+                                return (
+                                  <div
+                                    key={slotItem.id}
+                                    style={{
+                                      padding: '0.65rem',
+                                      borderRadius: '10px',
+                                      background: isLab ? 'rgba(168, 85, 247, 0.08)' : 'rgba(99, 102, 241, 0.08)',
+                                      border: isLab ? '1px solid rgba(168, 85, 247, 0.3)' : '1px solid rgba(99, 102, 241, 0.3)',
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      gap: '0.3rem',
+                                      transition: 'all 0.2s ease',
+                                      position: 'relative'
+                                    }}
+                                  >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.25rem' }}>
+                                      <span style={{ fontWeight: 700, color: '#fff', fontSize: '0.85rem', lineHeight: 1.25 }}>
+                                        {slotItem.subjectName}
+                                      </span>
+                                      {isLab && (
+                                        <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', flexShrink: 0 }}>
+                                          <span style={{
+                                            fontSize: '0.62rem',
+                                            fontWeight: 800,
+                                            padding: '0.1rem 0.35rem',
+                                            borderRadius: '4px',
+                                            background: 'rgba(168, 85, 247, 0.25)',
+                                            color: '#c084fc',
+                                            border: '1px solid rgba(168, 85, 247, 0.4)',
+                                            whiteSpace: 'nowrap'
+                                          }}>
+                                            LAB
+                                          </span>
+                                          <span style={{
+                                            fontSize: '0.62rem',
+                                            fontWeight: 800,
+                                            padding: '0.1rem 0.35rem',
+                                            borderRadius: '4px',
+                                            background: 'rgba(234, 179, 8, 0.2)',
+                                            color: '#fbbf24',
+                                            border: '1px solid rgba(234, 179, 8, 0.4)',
+                                            whiteSpace: 'nowrap'
+                                          }}>
+                                            Batch: {getBatchLabel(slotItem, slotItems)}
+                                          </span>
+                                        </div>
+                                      )}
+                                    </div>
 
-                              return (
-                                <div
-                                  key={slotItem.id}
-                                  style={{
-                                    padding: '0.65rem',
-                                    borderRadius: '10px',
-                                    background: isLab ? 'rgba(168, 85, 247, 0.08)' : 'rgba(99, 102, 241, 0.08)',
-                                    border: isLab ? '1px solid rgba(168, 85, 247, 0.3)' : '1px solid rgba(99, 102, 241, 0.3)',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '0.3rem',
-                                    transition: 'all 0.2s ease',
-                                    position: 'relative'
-                                  }}
-                                >
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.25rem' }}>
-                                    <span style={{ fontWeight: 700, color: '#fff', fontSize: '0.85rem', lineHeight: 1.25 }}>
-                                      {slotItem.subjectName}
-                                    </span>
-                                    {isLab && (
-                                      <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', flexShrink: 0 }}>
-                                        <span style={{
-                                          fontSize: '0.62rem',
-                                          fontWeight: 800,
-                                          padding: '0.1rem 0.35rem',
-                                          borderRadius: '4px',
-                                          background: 'rgba(168, 85, 247, 0.25)',
-                                          color: '#c084fc',
-                                          border: '1px solid rgba(168, 85, 247, 0.4)',
-                                          whiteSpace: 'nowrap'
-                                        }}>
-                                          LAB
-                                        </span>
-                                        <span style={{
-                                          fontSize: '0.62rem',
-                                          fontWeight: 800,
-                                          padding: '0.1rem 0.35rem',
-                                          borderRadius: '4px',
-                                          background: 'rgba(234, 179, 8, 0.2)',
-                                          color: '#fbbf24',
-                                          border: '1px solid rgba(234, 179, 8, 0.4)',
-                                          whiteSpace: 'nowrap'
-                                        }}>
-                                          Batch: {getBatchLabel(slotItem, slotItems)}
-                                        </span>
+                                    <div style={{ fontSize: '0.74rem', color: '#06b6d4', fontWeight: 600 }}>
+                                      {slotItem.facultyName || 'Professor'}
+                                    </div>
+
+                                    <div style={{
+                                      display: 'flex',
+                                      justifyContent: 'space-between',
+                                      alignItems: 'center',
+                                      marginTop: 'auto',
+                                      paddingTop: '0.3rem',
+                                      borderTop: '1px solid rgba(255, 255, 255, 0.06)'
+                                    }}>
+                                      <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 700 }}>
+                                        {slotItem.roomNumber}
+                                      </span>
+                                      <div style={{ display: 'inline-flex', gap: '0.25rem' }}>
+                                        <button className="btn-icon" style={{ padding: '0.15rem', width: '20px', height: '20px' }} onClick={() => handleOpenEdit(slotItem)} title="Edit Slot">
+                                          <Edit2 size={11} />
+                                        </button>
+                                        <button className="btn-icon btn-icon-danger" style={{ padding: '0.15rem', width: '20px', height: '20px' }} onClick={() => handleDeleteClick(slotItem)} title="Delete Slot">
+                                          <Trash2 size={11} />
+                                        </button>
                                       </div>
-                                    )}
-                                  </div>
-
-                                  <div style={{ fontSize: '0.74rem', color: '#06b6d4', fontWeight: 600 }}>
-                                    {slotItem.facultyName || 'Professor'}
-                                  </div>
-
-                                  <div style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    marginTop: 'auto',
-                                    paddingTop: '0.3rem',
-                                    borderTop: '1px solid rgba(255, 255, 255, 0.06)'
-                                  }}>
-                                    <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 700 }}>
-                                      {slotItem.roomNumber}
-                                    </span>
-                                    <div style={{ display: 'inline-flex', gap: '0.25rem' }}>
-                                      <button className="btn-icon" style={{ padding: '0.15rem', width: '20px', height: '20px' }} onClick={() => handleOpenEdit(slotItem)} title="Edit Slot">
-                                        <Edit2 size={11} />
-                                      </button>
-                                      <button className="btn-icon btn-icon-danger" style={{ padding: '0.15rem', width: '20px', height: '20px' }} onClick={() => handleDeleteClick(slotItem)} title="Delete Slot">
-                                        <Trash2 size={11} />
-                                      </button>
                                     </div>
                                   </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            minHeight: '88px',
-                            color: '#475569',
-                            fontSize: '0.8rem',
-                            fontWeight: 500,
-                            background: 'rgba(255, 255, 255, 0.01)',
-                            borderRadius: '8px',
-                            border: '1px dashed rgba(255, 255, 255, 0.04)'
-                          }}>
-                            Free
-                          </div>
-                        )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              minHeight: '88px',
+                              color: '#475569',
+                              fontSize: '0.8rem',
+                              fontWeight: 500,
+                              background: 'rgba(255, 255, 255, 0.01)',
+                              borderRadius: '8px',
+                              border: '1px dashed rgba(255, 255, 255, 0.04)'
+                            }}>
+                              Free
+                            </div>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

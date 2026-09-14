@@ -1274,32 +1274,35 @@ export default function FacultyDashboard() {
                 <table className="data-table" style={{ width: '100%', minWidth: '920px', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ background: 'rgba(255, 255, 255, 0.03)' }}>
-                      <th style={{ width: '150px', textAlign: 'left', padding: '1rem', borderRight: '1px solid var(--border-subtle)', color: '#94a3b8' }}>
-                        Time Slot
+                      <th style={{ width: '140px', textAlign: 'left', padding: '1rem', borderRight: '1px solid var(--border-subtle)', color: '#94a3b8' }}>
+                        Day
                       </th>
-                      {daysOfWeek.map((day) => (
-                        <th key={day} style={{ textAlign: 'center', padding: '1rem', borderRight: '1px solid var(--border-subtle)', color: '#fff', fontSize: '0.92rem', fontWeight: 700 }}>
-                          {day}
+                      {activeFacultyTimeSlots.map((slot) => (
+                        <th key={slot.start} style={{ textAlign: 'center', padding: '0.85rem', borderRight: '1px solid var(--border-subtle)', color: '#fff', fontSize: '0.88rem', fontWeight: 700, minWidth: '150px' }}>
+                          <div>{slot.label}</div>
+                          <div style={{ fontSize: '0.72rem', color: '#06b6d4', fontWeight: 600, marginTop: '2px' }}>{slot.period}</div>
                         </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {activeFacultyTimeSlots.map((slot) => (
-                      <tr key={slot.start} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                        {/* Left Column: Time Slot */}
+                    {daysOfWeek.map((day) => (
+                      <tr key={day} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                        {/* Left Column: Day */}
                         <td style={{
                           padding: '1rem',
                           borderRight: '1px solid var(--border-subtle)',
                           background: 'rgba(255, 255, 255, 0.015)',
-                          verticalAlign: 'middle'
+                          verticalAlign: 'middle',
+                          fontWeight: 700,
+                          color: '#fff',
+                          fontSize: '0.92rem'
                         }}>
-                          <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.85rem' }}>{slot.label}</div>
-                          <div style={{ fontSize: '0.72rem', color: '#06b6d4', fontWeight: 600, marginTop: '2px' }}>{slot.period}</div>
+                          {day}
                         </td>
 
-                        {/* Day Columns */}
-                        {daysOfWeek.map((day) => {
+                        {/* Time Slot Columns */}
+                        {activeFacultyTimeSlots.map((slot) => {
                           const slotItem = (weeklyGrid[day] || []).find((t) => {
                             return (
                               (t.startTime <= slot.start && t.endTime > slot.start) ||
@@ -1316,7 +1319,7 @@ export default function FacultyDashboard() {
 
                           return (
                             <td
-                              key={day}
+                              key={slot.start}
                               style={{
                                 padding: '0.65rem',
                                 borderRight: '1px solid var(--border-subtle)',
