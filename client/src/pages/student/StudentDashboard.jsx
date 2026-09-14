@@ -646,6 +646,42 @@ export default function StudentDashboard() {
   const weeklyGrid = timetableData?.weeklyGrid || {};
   const assignedClassrooms = timetableData?.assignedClassrooms || [];
 
+  const studentBaseTimeSlots = [
+    { label: '09:15 AM – 10:15 AM', start: '09:15', end: '10:15', period: 'Period 1' },
+    { label: '10:15 AM – 11:15 AM', start: '10:15', end: '11:15', period: 'Period 2' },
+    { label: '11:30 AM – 12:30 PM', start: '11:30', end: '12:30', period: 'Period 3' },
+    { label: '12:30 PM – 01:30 PM', start: '12:30', end: '13:30', period: 'Period 4' },
+    { label: '02:00 PM – 03:00 PM', start: '14:00', end: '15:00', period: 'Period 5' },
+    { label: '03:00 PM – 04:00 PM', start: '15:00', end: '16:00', period: 'Period 6' },
+    { label: '04:00 PM – 05:00 PM', start: '16:00', end: '17:00', period: 'Period 7' }
+  ];
+
+  const getLabBatch = (slotItem, itemsInSlot) => {
+    if (slotItem.batch) return slotItem.batch;
+    if (slotItem.id) {
+      const match = slotItem.id.match(/_([123])$/);
+      if (match) return `S${match[1]}`;
+    }
+    if (itemsInSlot && itemsInSlot.length > 1) {
+      const idx = itemsInSlot.findIndex((s) => s.id === slotItem.id);
+      if (idx >= 0 && idx < 3) return `S${idx + 1}`;
+    }
+    return 'S1';
+  };
+
+  const activeStudentTimeSlots = [...studentBaseTimeSlots];
+  Object.values(weeklyGrid).flat().forEach((t) => {
+    if (t && t.startTime && t.endTime && !activeStudentTimeSlots.some((s) => s.start === t.startTime && s.end === t.endTime)) {
+      activeStudentTimeSlots.push({
+        label: `${t.startTime} – ${t.endTime}`,
+        start: t.startTime,
+        end: t.endTime,
+        period: `Period ${t.periodNumber || ''}`
+      });
+    }
+  });
+  activeStudentTimeSlots.sort((a, b) => a.start.localeCompare(b.start));
+
   return (
     <div className="student-layout">
       {/* Sidebar */}
@@ -1070,97 +1106,159 @@ export default function StudentDashboard() {
                 </div>
               </div>
 
-              {/* Day Selector Pills */}
-              <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
-                {daysOfWeek.map((day) => (
-                  <button
-                    key={day}
-                    onClick={() => setSelectedDay(day)}
-                    style={{
-                      padding: '0.65rem 1.25rem',
-                      borderRadius: '10px',
-                      border: selectedDay === day ? '1px solid #10b981' : '1px solid var(--border-subtle)',
-                      background: selectedDay === day ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'var(--bg-input)',
-                      color: '#fff',
-                      fontWeight: 600,
-                      fontSize: '0.88rem',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      whiteSpace: 'nowrap'
-                    }}
-                  >
-                    {day}
-                  </button>
-                ))}
-              </div>
+              {/* REAL COLLEGE HORIZONTAL WEEKLY TIMETABLE TABLE */}
+              <div className="table-container" style={{ overflowX: 'auto', borderRadius: '16px', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
+                <table className="data-table" style={{ width: '100%', minWidth: '920px', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ background: 'rgba(255, 255, 255, 0.03)' }}>
+                      <th style={{ width: '150px', textAlign: 'left', padding: '1rem', borderRight: '1px solid var(--border-subtle)', color: '#94a3b8' }}>
+                        Time Slot
+                      </th>
+                      {daysOfWeek.map((day) => (
+                        <th key={day} style={{ textAlign: 'center', padding: '1rem', borderRight: '1px solid var(--border-subtle)', color: '#fff', fontSize: '0.92rem', fontWeight: 700 }}>
+                          {day}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activeStudentTimeSlots.map((slot) => (
+                      <tr key={slot.start} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                        {/* Left Column: Time Slot */}
+                        <td style={{
+                          padding: '1rem',
+                          borderRight: '1px solid var(--border-subtle)',
+                          background: 'rgba(255, 255, 255, 0.015)',
+                          verticalAlign: 'middle'
+                        }}>
+                          <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.85rem' }}>{slot.label}</div>
+                          <div style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 600, marginTop: '2px' }}>{slot.period}</div>
+                        </td>
 
-              {/* Grid of Lectures for Selected Day */}
-              <div className="card" style={{ padding: '1.5rem', background: 'rgba(15, 23, 42, 0.75)', border: '1px solid var(--border-subtle)', borderRadius: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-                  <div>
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff' }}>
-                      {selectedDay}'s Class Schedule
-                    </h2>
-                    <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0 }}>
-                      Official timetable for {user?.department || 'Computer Engineering'} ({user?.year || 'SE'}-{user?.division || 'B'})
-                    </p>
-                  </div>
-                  <span style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', padding: '0.35rem 0.8rem', borderRadius: '999px', fontWeight: 600, fontSize: '0.78rem' }}>
-                    {weeklyGrid[selectedDay]?.length || 0} Lectures
-                  </span>
-                </div>
+                        {/* Day Columns */}
+                        {daysOfWeek.map((day) => {
+                          const slotItems = (weeklyGrid[day] || []).filter((t) => {
+                            return (
+                              (t.startTime <= slot.start && t.endTime > slot.start) ||
+                              (t.startTime < slot.end && t.endTime >= slot.end) ||
+                              (t.startTime >= slot.start && t.endTime <= slot.end)
+                            );
+                          });
 
-                {(weeklyGrid[selectedDay] || []).length === 0 ? (
-                  <div style={{ padding: '4rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                    <Calendar size={48} style={{ margin: '0 auto 1rem auto', opacity: 0.3 }} />
-                    <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', fontWeight: 600 }}>No Lectures Scheduled on {selectedDay}</p>
-                    <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>You have no classes scheduled on this day.</p>
-                  </div>
-                ) : (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.25rem' }}>
-                    {(weeklyGrid[selectedDay] || []).map((slot, i) => (
-                      <div
-                        key={slot.id || i}
-                        style={{
-                          padding: '1.25rem',
-                          borderRadius: '14px',
-                          background: 'rgba(255, 255, 255, 0.03)',
-                          border: '1px solid var(--border-subtle)',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '0.85rem'
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <span style={{ fontSize: '0.78rem', fontWeight: 700, padding: '0.2rem 0.5rem', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.2)', color: '#34d399' }}>
-                            Period {slot.periodNumber || (i + 1)}
-                          </span>
-                          <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#fff' }}>
-                            {slot.startTime} – {slot.endTime}
-                          </span>
-                        </div>
+                          return (
+                            <td
+                              key={day}
+                              style={{
+                                padding: '0.65rem',
+                                borderRight: '1px solid var(--border-subtle)',
+                                verticalAlign: 'top',
+                                minWidth: '150px'
+                              }}
+                            >
+                              {slotItems.length > 0 ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                  {slotItems.map((slotItem) => {
+                                    const isLab = (
+                                      (slotItem.classroomType && slotItem.classroomType.toLowerCase().includes('lab')) ||
+                                      (slotItem.subjectName && slotItem.subjectName.toLowerCase().includes('lab')) ||
+                                      slotItem.isLab
+                                    );
 
-                        <div>
-                          <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#fff' }}>{slot.subjectName}</h3>
-                          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                            Code: {slot.subjectCode || 'N/A'} • {slot.credits || 4} Credits
-                          </div>
-                        </div>
+                                    return (
+                                      <div
+                                        key={slotItem.id || `${slotItem.startTime}-${slotItem.subjectName}`}
+                                        style={{
+                                          padding: '0.65rem',
+                                          borderRadius: '10px',
+                                          background: isLab ? 'rgba(168, 85, 247, 0.08)' : 'rgba(16, 185, 129, 0.08)',
+                                          border: isLab ? '1px solid rgba(168, 85, 247, 0.3)' : '1px solid rgba(16, 185, 129, 0.3)',
+                                          display: 'flex',
+                                          flexDirection: 'column',
+                                          gap: '0.3rem',
+                                          transition: 'all 0.2s ease',
+                                          position: 'relative'
+                                        }}
+                                      >
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.25rem' }}>
+                                          <span style={{ fontWeight: 700, color: '#fff', fontSize: '0.85rem', lineHeight: 1.25 }}>
+                                            {slotItem.subjectName}
+                                          </span>
+                                          {isLab && (
+                                            <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', flexShrink: 0 }}>
+                                              <span style={{
+                                                fontSize: '0.62rem',
+                                                fontWeight: 800,
+                                                padding: '0.1rem 0.35rem',
+                                                borderRadius: '4px',
+                                                background: 'rgba(168, 85, 247, 0.25)',
+                                                color: '#c084fc',
+                                                border: '1px solid rgba(168, 85, 247, 0.4)',
+                                                whiteSpace: 'nowrap'
+                                              }}>
+                                                LAB
+                                              </span>
+                                              <span style={{
+                                                fontSize: '0.62rem',
+                                                fontWeight: 800,
+                                                padding: '0.1rem 0.35rem',
+                                                borderRadius: '4px',
+                                                background: 'rgba(234, 179, 8, 0.2)',
+                                                color: '#fbbf24',
+                                                border: '1px solid rgba(234, 179, 8, 0.4)',
+                                                whiteSpace: 'nowrap'
+                                              }}>
+                                                Batch: {getLabBatch(slotItem, slotItems)}
+                                              </span>
+                                            </div>
+                                          )}
+                                        </div>
 
-                        <div style={{ paddingTop: '0.75rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)', display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
-                          <div>
-                            <span style={{ color: 'var(--text-muted)' }}>Faculty:</span>{' '}
-                            <strong style={{ color: '#fff' }}>{slot.facultyName}</strong>
-                          </div>
-                          <div>
-                            <span style={{ color: 'var(--text-muted)' }}>Room:</span>{' '}
-                            <strong style={{ color: 'var(--accent-cyan)' }}>{slot.roomNumber}</strong>
-                          </div>
-                        </div>
-                      </div>
+                                        <div style={{ fontSize: '0.74rem', color: '#06b6d4', fontWeight: 600 }}>
+                                          {slotItem.facultyName || 'Professor'}
+                                        </div>
+
+                                        <div style={{
+                                          display: 'flex',
+                                          justifyContent: 'space-between',
+                                          alignItems: 'center',
+                                          marginTop: 'auto',
+                                          paddingTop: '0.3rem',
+                                          borderTop: '1px solid rgba(255, 255, 255, 0.06)'
+                                        }}>
+                                          <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 700 }}>
+                                            📍 {slotItem.roomNumber}
+                                          </span>
+                                          <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                                            {slotItem.startTime}–{slotItem.endTime}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              ) : (
+                                <div style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  minHeight: '80px',
+                                  color: '#475569',
+                                  fontSize: '0.8rem',
+                                  fontWeight: 500,
+                                  background: 'rgba(255, 255, 255, 0.01)',
+                                  borderRadius: '8px',
+                                  border: '1px dashed rgba(255, 255, 255, 0.04)'
+                                }}>
+                                  Free
+                                </div>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
                     ))}
-                  </div>
-                )}
+                  </tbody>
+                </table>
               </div>
 
               {/* Assigned Classrooms Matrix */}

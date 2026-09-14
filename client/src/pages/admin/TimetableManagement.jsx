@@ -232,18 +232,32 @@ export default function TimetableManagement() {
     }
   };
 
-  // Standard College Time Slots
+  // Standard College Time Slots from Official College Routine
   const baseTimeSlots = [
-    { label: '09:00 AM – 10:00 AM', start: '09:00', end: '10:00', period: 'Period 1' },
-    { label: '10:00 AM – 11:00 AM', start: '10:00', end: '11:00', period: 'Period 2' },
-    { label: '11:15 AM – 12:15 PM', start: '11:15', end: '12:15', period: 'Period 3' },
-    { label: '12:15 PM – 01:15 PM', start: '12:15', end: '13:15', period: 'Period 4' },
+    { label: '09:15 AM – 10:15 AM', start: '09:15', end: '10:15', period: 'Period 1' },
+    { label: '10:15 AM – 11:15 AM', start: '10:15', end: '11:15', period: 'Period 2' },
+    { label: '11:30 AM – 12:30 PM', start: '11:30', end: '12:30', period: 'Period 3' },
+    { label: '12:30 PM – 01:30 PM', start: '12:30', end: '13:30', period: 'Period 4' },
     { label: '02:00 PM – 03:00 PM', start: '14:00', end: '15:00', period: 'Period 5' },
     { label: '03:00 PM – 04:00 PM', start: '15:00', end: '16:00', period: 'Period 6' },
-    { label: '04:15 PM – 05:15 PM', start: '16:15', end: '17:15', period: 'Period 7' }
+    { label: '04:00 PM – 05:00 PM', start: '16:00', end: '17:00', period: 'Period 7' }
   ];
 
-  // Derive all active time slots from timetable entries if any custom slot exists
+  // Helper to extract/display lab batch (S1, S2, S3)
+  const getBatchLabel = (item, itemsInSlot) => {
+    if (item.batch) return item.batch;
+    if (item.id) {
+      const match = item.id.match(/_([123])$/);
+      if (match) return `S${match[1]}`;
+    }
+    if (itemsInSlot && itemsInSlot.length > 1) {
+      const idx = itemsInSlot.findIndex((s) => s.id === item.id);
+      if (idx >= 0 && idx < 3) return `S${idx + 1}`;
+    }
+    return 'S1';
+  };
+
+  // Derive active time slots, preserving any custom timings
   const activeTimeSlots = [...baseTimeSlots];
   timetables.forEach((t) => {
     if (!activeTimeSlots.some((s) => s.start === t.startTime && s.end === t.endTime)) {
@@ -469,18 +483,32 @@ export default function TimetableManagement() {
                                       {slotItem.subjectName}
                                     </span>
                                     {isLab && (
-                                      <span style={{
-                                        fontSize: '0.62rem',
-                                        fontWeight: 800,
-                                        padding: '0.1rem 0.35rem',
-                                        borderRadius: '4px',
-                                        background: 'rgba(168, 85, 247, 0.25)',
-                                        color: '#c084fc',
-                                        border: '1px solid rgba(168, 85, 247, 0.4)',
-                                        whiteSpace: 'nowrap'
-                                      }}>
-                                        LAB
-                                      </span>
+                                      <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', flexShrink: 0 }}>
+                                        <span style={{
+                                          fontSize: '0.62rem',
+                                          fontWeight: 800,
+                                          padding: '0.1rem 0.35rem',
+                                          borderRadius: '4px',
+                                          background: 'rgba(168, 85, 247, 0.25)',
+                                          color: '#c084fc',
+                                          border: '1px solid rgba(168, 85, 247, 0.4)',
+                                          whiteSpace: 'nowrap'
+                                        }}>
+                                          LAB
+                                        </span>
+                                        <span style={{
+                                          fontSize: '0.62rem',
+                                          fontWeight: 800,
+                                          padding: '0.1rem 0.35rem',
+                                          borderRadius: '4px',
+                                          background: 'rgba(234, 179, 8, 0.2)',
+                                          color: '#fbbf24',
+                                          border: '1px solid rgba(234, 179, 8, 0.4)',
+                                          whiteSpace: 'nowrap'
+                                        }}>
+                                          Batch: {getBatchLabel(slotItem, slotItems)}
+                                        </span>
+                                      </div>
                                     )}
                                   </div>
 
