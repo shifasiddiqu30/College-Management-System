@@ -66,7 +66,8 @@ import {
   saveDailyAttendance,
   countAttendancePercentage,
   publishAttendance,
-  getFacultyDefaultersList
+  getFacultyDefaultersList,
+  getFacultySubjects
 } from '../controllers/facultyController.js';
 import { verifyToken } from '../middleware/authMiddleware.js';
 import { authorizeRoles } from '../middleware/roleMiddleware.js';
@@ -81,6 +82,7 @@ router.use(authorizeRoles(ROLES.FACULTY));
 // 1. Dashboard & Profile
 router.get('/dashboard-stats', getFacultyDashboardStats);
 router.get('/profile', getFacultyProfile);
+router.get('/subjects', getFacultySubjects);
 
 // 2. Timetable & Classroom Availability
 router.get('/departments', getFacultyDepartmentFolders);

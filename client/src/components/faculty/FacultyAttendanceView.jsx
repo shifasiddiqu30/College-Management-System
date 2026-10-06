@@ -27,10 +27,10 @@ import DepartmentFolderTabs from '../common/DepartmentFolderTabs';
 export default function FacultyAttendanceView() {
   const { user, authFetch, showToast } = useAuth();
 
-  // Selected Filters (defaults to faculty's department if available)
+  // Selected Filters (defaults to Computer Engineering Second Year Division C)
   const [selectedDept, setSelectedDept] = useState(user?.department || 'Computer Engineering');
   const [selectedYear, setSelectedYear] = useState('SE');
-  const [selectedDivision, setSelectedDivision] = useState('B');
+  const [selectedDivision, setSelectedDivision] = useState('C');
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [startDate, setStartDate] = useState('');
@@ -51,28 +51,44 @@ export default function FacultyAttendanceView() {
   const [actionLoading, setActionLoading] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
+  // Filtered Subjects: For Computer Engineering SE Division C, strictly keep only DSGT, AOA, MAX, COA
+  const filteredSubjects = React.useMemo(() => {
+    let list = subjects.filter(s => !selectedDept || s.department === selectedDept);
+    if (selectedDept === 'Computer Engineering' && selectedYear === 'SE' && selectedDivision === 'C') {
+      const allowedCodes = ['DSGT', 'AOA', 'MAX', 'COA'];
+      list = list.filter(s => allowedCodes.includes(s.code));
+    }
+    return list;
+  }, [subjects, selectedDept, selectedYear, selectedDivision]);
+
   // Load Subjects for selected Department
   const fetchSubjects = useCallback(async () => {
     try {
       const res = await authFetch('/api/faculty/subjects');
       const data = await res.json();
       if (res.ok && data.success) {
-        const deptSubjects = (data.subjects || []).filter(s => !selectedDept || s.department === selectedDept);
-        setSubjects(deptSubjects.length > 0 ? deptSubjects : data.subjects || []);
-        if (deptSubjects.length > 0) {
-          setSelectedSubjectId(deptSubjects[0].id);
-        } else if (data.subjects && data.subjects.length > 0) {
-          setSelectedSubjectId(data.subjects[0].id);
-        }
+        const rawSubjects = data.subjects || [];
+        setSubjects(rawSubjects);
       }
     } catch (err) {
       console.error('Error fetching faculty subjects:', err);
     }
-  }, [authFetch, selectedDept]);
+  }, [authFetch]);
 
   useEffect(() => {
     fetchSubjects();
   }, [fetchSubjects]);
+
+  // Sync selectedSubjectId with filteredSubjects
+  useEffect(() => {
+    if (filteredSubjects.length > 0) {
+      if (!filteredSubjects.some(s => s.id === selectedSubjectId || s.code === selectedSubjectId)) {
+        setSelectedSubjectId(filteredSubjects[0].id);
+      }
+    } else {
+      setSelectedSubjectId('');
+    }
+  }, [filteredSubjects, selectedSubjectId]);
 
   // Load Attendance Sheet
   const fetchAttendanceSheet = useCallback(async () => {
@@ -156,6 +172,16 @@ export default function FacultyAttendanceView() {
     fetchDefaulters();
   }, [fetchAttendanceSheet, fetchDefaulters]);
 
+  // Set specific status for student on date
+  const handleSetStudentStatus = (studentId, date, status) => {
+    const key = `${studentId}_${date}`;
+    setAttendanceMap(prev => ({
+      ...prev,
+      [key]: status
+    }));
+    setHasUnsavedChanges(true);
+  };
+
   // Cell Click / Status Toggle: PRESENT -> ABSENT -> LATE -> PRESENT
   const handleToggleCellStatus = (studentId, date) => {
     const key = `${studentId}_${date}`;
@@ -191,7 +217,18 @@ export default function FacultyAttendanceView() {
     showToast(`Marked all students ABSENT for ${date}`, 'warning');
   };
 
-  // Add new date column to Excel Sheet
+  // Bulk: Mark All Late
+  const handleMarkAllLate = (date = selectedDate) => {
+    const nextMap = { ...attendanceMap };
+    students.forEach(st => {
+      nextMap[`${st.id}_${date}`] = 'LATE';
+    });
+    setAttendanceMap(nextMap);
+    setHasUnsavedChanges(true);
+    showToast(`Marked all students LATE for ${date}`, 'info');
+  };
+
+  // Add new date column to Attendance Register
   const handleAddDateSession = () => {
     if (!selectedDate) return;
     if (recordedDates.includes(selectedDate)) {
@@ -385,7 +422,7 @@ export default function FacultyAttendanceView() {
                 onChange={(e) => setSelectedSubjectId(e.target.value)}
                 style={{ padding: '0.45rem 0.75rem', background: '#1e293b', color: '#fff', border: '1px solid #334155', borderRadius: '8px', fontSize: '0.85rem', minWidth: '220px' }}
               >
-                {subjects.map(sub => (
+                {filteredSubjects.map(sub => (
                   <option key={sub.id} value={sub.id}>
                     {sub.code} — {sub.name}
                   </option>
@@ -436,7 +473,7 @@ export default function FacultyAttendanceView() {
               }}
             >
               <Save size={16} />
-              {hasUnsavedChanges ? 'Save Changes *' : 'Save Daily Attendance'}
+              {hasUnsavedChanges ? 'Save Changes *' : 'Save Attendance'}
             </button>
 
             <button
@@ -527,7 +564,7 @@ export default function FacultyAttendanceView() {
           style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.55rem 1.25rem', borderRadius: '10px' }}
         >
           <ClipboardCheck size={16} />
-          Excel Attendance Register
+          Attendance Register
         </button>
 
         <button
@@ -570,48 +607,55 @@ export default function FacultyAttendanceView() {
         </button>
       </div>
 
-      {/* TAB 1: EXCEL ATTENDANCE REGISTER */}
+      {/* TAB 1: ATTENDANCE REGISTER */}
       {activeTab === 'sheet' && (
         <div className="card" style={{ padding: '1.25rem', background: 'rgba(15, 23, 42, 0.75)', border: '1px solid var(--border-subtle)', borderRadius: '16px' }}>
           {/* Quick Toolbar */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Quick Fill:</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Quick Fill ({selectedDate}):</span>
               <button
                 className="btn btn-secondary btn-sm"
                 onClick={() => handleMarkAllPresent(selectedDate)}
-                style={{ fontSize: '0.78rem', padding: '0.3rem 0.65rem' }}
+                style={{ fontSize: '0.78rem', padding: '0.3rem 0.65rem', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)' }}
               >
-                Mark All Present ({selectedDate})
+                Mark All Present
               </button>
               <button
                 className="btn btn-secondary btn-sm"
                 onClick={() => handleMarkAllAbsent(selectedDate)}
-                style={{ fontSize: '0.78rem', padding: '0.3rem 0.65rem' }}
+                style={{ fontSize: '0.78rem', padding: '0.3rem 0.65rem', background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.3)' }}
               >
-                Mark All Absent ({selectedDate})
+                Mark All Absent
+              </button>
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => handleMarkAllLate(selectedDate)}
+                style={{ fontSize: '0.78rem', padding: '0.3rem 0.65rem', background: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.3)' }}
+              >
+                Mark All Late
               </button>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.78rem', color: '#94a3b8' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                 <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#10b981', display: 'inline-block' }}></span>
-                <span>P = Present (Click cell to toggle)</span>
+                <span>Present</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                 <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#ef4444', display: 'inline-block' }}></span>
-                <span>A = Absent</span>
+                <span>Absent</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                 <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#f59e0b', display: 'inline-block' }}></span>
-                <span>L = Late</span>
+                <span>Late</span>
               </div>
             </div>
           </div>
 
-          {/* Excel Table */}
+          {/* Attendance Register Table */}
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>Loading attendance sheet...</div>
+            <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>Loading attendance register...</div>
           ) : students.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>
               No students enrolled in {selectedDept} {selectedYear}-{selectedDivision}.
@@ -622,23 +666,25 @@ export default function FacultyAttendanceView() {
                 <thead>
                   <tr style={{ background: 'rgba(255, 255, 255, 0.04)' }}>
                     <th style={{ width: '70px', padding: '0.75rem', textAlign: 'center', borderRight: '1px solid var(--border-subtle)' }}>Roll No</th>
-                    <th style={{ width: '220px', padding: '0.75rem', textAlign: 'left', borderRight: '1px solid var(--border-subtle)' }}>Student Name</th>
-                    {recordedDates.map(d => (
+                    <th style={{ width: '200px', padding: '0.75rem', textAlign: 'left', borderRight: '1px solid var(--border-subtle)' }}>Student Name</th>
+                    <th style={{ width: '250px', padding: '0.75rem', textAlign: 'center', borderRight: '1px solid var(--border-subtle)', background: 'rgba(99, 102, 241, 0.1)' }}>
+                      Attendance Status ({selectedDate})
+                    </th>
+                    {recordedDates.filter(d => d !== selectedDate).map(d => (
                       <th
                         key={d}
                         style={{
                           padding: '0.75rem 0.5rem',
                           textAlign: 'center',
                           borderRight: '1px solid var(--border-subtle)',
-                          minWidth: '85px',
-                          background: d === selectedDate ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
-                          color: d === selectedDate ? '#818cf8' : '#fff'
+                          minWidth: '75px',
+                          color: '#cbd5e1'
                         }}
                       >
-                        <div style={{ fontSize: '0.78rem', fontWeight: 700 }}>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 700 }}>
                           {d.split('-').slice(1).join('/')}
                         </div>
-                        <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>
+                        <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>
                           {new Date(d).toLocaleDateString('en-US', { weekday: 'short' })}
                         </div>
                       </th>
@@ -654,6 +700,7 @@ export default function FacultyAttendanceView() {
                     });
                     const pct = recordedDates.length > 0 ? ((presentCount / recordedDates.length) * 100).toFixed(0) : 0;
                     const isDefaulter = pct < 30 && recordedDates.length > 0;
+                    const currentStatus = attendanceMap[`${st.id}_${selectedDate}`] || 'PRESENT';
 
                     return (
                       <tr key={st.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
@@ -670,7 +717,75 @@ export default function FacultyAttendanceView() {
                             )}
                           </div>
                         </td>
-                        {recordedDates.map(d => {
+
+                        {/* Interactive Attendance Options: Present / Absent / Late */}
+                        <td style={{ padding: '0.5rem', textAlign: 'center', borderRight: '1px solid var(--border-subtle)', background: 'rgba(99, 102, 241, 0.04)' }}>
+                          <div style={{ display: 'inline-flex', gap: '0.35rem', background: 'rgba(0, 0, 0, 0.35)', padding: '0.25rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                            <button
+                              type="button"
+                              onClick={() => handleSetStudentStatus(st.id, selectedDate, 'PRESENT')}
+                              style={{
+                                padding: '0.3rem 0.65rem',
+                                borderRadius: '6px',
+                                fontSize: '0.78rem',
+                                fontWeight: 700,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.25rem',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease',
+                                background: currentStatus === 'PRESENT' ? '#10b981' : 'transparent',
+                                color: currentStatus === 'PRESENT' ? '#fff' : '#94a3b8',
+                                border: currentStatus === 'PRESENT' ? '1px solid #10b981' : '1px solid transparent'
+                              }}
+                            >
+                              <CheckCircle2 size={13} /> Present
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleSetStudentStatus(st.id, selectedDate, 'ABSENT')}
+                              style={{
+                                padding: '0.3rem 0.65rem',
+                                borderRadius: '6px',
+                                fontSize: '0.78rem',
+                                fontWeight: 700,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.25rem',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease',
+                                background: currentStatus === 'ABSENT' ? '#ef4444' : 'transparent',
+                                color: currentStatus === 'ABSENT' ? '#fff' : '#94a3b8',
+                                border: currentStatus === 'ABSENT' ? '1px solid #ef4444' : '1px solid transparent'
+                              }}
+                            >
+                              <XCircle size={13} /> Absent
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleSetStudentStatus(st.id, selectedDate, 'LATE')}
+                              style={{
+                                padding: '0.3rem 0.65rem',
+                                borderRadius: '6px',
+                                fontSize: '0.78rem',
+                                fontWeight: 700,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.25rem',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease',
+                                background: currentStatus === 'LATE' ? '#f59e0b' : 'transparent',
+                                color: currentStatus === 'LATE' ? '#000' : '#94a3b8',
+                                border: currentStatus === 'LATE' ? '1px solid #f59e0b' : '1px solid transparent'
+                              }}
+                            >
+                              <Clock size={13} /> Late
+                            </button>
+                          </div>
+                        </td>
+
+                        {/* Historical Dates Grid Cells */}
+                        {recordedDates.filter(d => d !== selectedDate).map(d => {
                           const status = attendanceMap[`${st.id}_${d}`] || 'PRESENT';
                           const isP = status === 'PRESENT';
                           const isA = status === 'ABSENT';
@@ -685,21 +800,21 @@ export default function FacultyAttendanceView() {
                                 textAlign: 'center',
                                 borderRight: '1px solid var(--border-subtle)',
                                 cursor: 'pointer',
-                                background: d === selectedDate ? 'rgba(99, 102, 241, 0.04)' : 'transparent',
                                 userSelect: 'none'
                               }}
                               title="Click to toggle: Present -> Absent -> Late"
                             >
                               <div style={{
-                                width: '32px',
-                                height: '32px',
+                                width: '28px',
+                                height: '28px',
                                 margin: '0 auto',
-                                borderRadius: '8px',
+                                borderRadius: '6px',
                                 display: 'flex',
                                 alignItems: 'center',
+                                justifyCenter: 'center',
                                 justifyContent: 'center',
                                 fontWeight: 800,
-                                fontSize: '0.85rem',
+                                fontSize: '0.8rem',
                                 transition: 'all 0.15s ease',
                                 background: isP ? 'rgba(16, 185, 129, 0.2)' : (isA ? 'rgba(239, 68, 68, 0.2)' : 'rgba(245, 158, 11, 0.2)'),
                                 color: isP ? '#34d399' : (isA ? '#f87171' : '#fbbf24'),

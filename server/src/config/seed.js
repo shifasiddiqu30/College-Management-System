@@ -46,12 +46,13 @@ export async function seedDatabase() {
 
   const sampleSubjects = [
     // Computer Engineering Subjects
+    { id: 'sub_ce_dsgt', code: 'DSGT', name: 'Discrete Structures and Graph Theory (DSGT)', department: 'Computer Engineering', semester: 3, credits: 4 },
+    { id: 'sub_ce_aoa', code: 'AOA', name: 'Analysis of Algorithm (AOA)', department: 'Computer Engineering', semester: 3, credits: 3 },
+    { id: 'sub_ce_max', code: 'MAX', name: 'Applied Mathematics (MAX)', department: 'Computer Engineering', semester: 3, credits: 4 },
+    { id: 'sub_ce_coa', code: 'COA', name: 'Computer Organization & Architecture (COA)', department: 'Computer Engineering', semester: 3, credits: 3 },
     { id: 'sub_ce_mce', code: 'MCE', name: 'Mathematics for Computer Engineering', department: 'Computer Engineering', semester: 3, credits: 4 },
     { id: 'sub_ce_mce_tut', code: 'MCE(T)', name: 'Mathematics for Computer Engineering (Tutorial)', department: 'Computer Engineering', semester: 3, credits: 1 },
-    { id: 'sub_ce_dsgt', code: 'DSGT', name: 'Discrete Structures and Graph Theory', department: 'Computer Engineering', semester: 3, credits: 4 },
-    { id: 'sub_ce_aoa', code: 'AOA', name: 'Analysis of Algorithm', department: 'Computer Engineering', semester: 3, credits: 3 },
     { id: 'sub_ce_aoa_lab', code: 'AOAL', name: 'Analysis of Algorithm Lab', department: 'Computer Engineering', semester: 3, credits: 1 },
-    { id: 'sub_ce_coa', code: 'COA', name: 'Computer Organization & Architecture', department: 'Computer Engineering', semester: 3, credits: 3 },
     { id: 'sub_ce_coa_lab', code: 'COAL', name: 'Computer Organization & Architecture Lab', department: 'Computer Engineering', semester: 3, credits: 1 },
     { id: 'sub_ce_fsjp', code: 'FSJP', name: 'Full Stack Java Programming', department: 'Computer Engineering', semester: 3, credits: 3 },
     { id: 'sub_ce_fsjp_lab', code: 'FSJPL', name: 'Full Stack Java Programming Lab', department: 'Computer Engineering', semester: 3, credits: 1 },
@@ -523,6 +524,77 @@ export async function seedDatabase() {
       department: 'Computer Engineering',
       year: 'SE',
       division: 'B',
+      roll_number: '48',
+      status: USER_STATUS.ACTIVE,
+      assigned_subjects: null,
+      assigned_classes: null
+    },
+    // Computer Engineering SE-C Cohort
+    {
+      id: 'usr_stu_c_soham_001',
+      name: 'Soham Deshmukh',
+      email: 'soham.c@college.edu',
+      password_hash: studentHash,
+      role: ROLES.STUDENT,
+      department: 'Computer Engineering',
+      year: 'SE',
+      division: 'C',
+      roll_number: '04',
+      status: USER_STATUS.ACTIVE,
+      assigned_subjects: null,
+      assigned_classes: null
+    },
+    {
+      id: 'usr_stu_c_aryan_002',
+      name: 'Aryan Kadam',
+      email: 'aryan.c@college.edu',
+      password_hash: studentHash,
+      role: ROLES.STUDENT,
+      department: 'Computer Engineering',
+      year: 'SE',
+      division: 'C',
+      roll_number: '15',
+      status: USER_STATUS.ACTIVE,
+      assigned_subjects: null,
+      assigned_classes: null
+    },
+    {
+      id: 'usr_stu_c_shifa_003',
+      name: 'Shifa Siddiqui',
+      email: 'shifa.c@college.edu',
+      password_hash: studentHash,
+      role: ROLES.STUDENT,
+      department: 'Computer Engineering',
+      year: 'SE',
+      division: 'C',
+      roll_number: '23',
+      status: USER_STATUS.ACTIVE,
+      assigned_subjects: null,
+      assigned_classes: null
+    },
+    {
+      id: 'usr_stu_c_riya_004',
+      name: 'Riya Shah',
+      email: 'riya.c@college.edu',
+      password_hash: studentHash,
+      role: ROLES.STUDENT,
+      department: 'Computer Engineering',
+      year: 'SE',
+      division: 'C',
+      roll_number: '32',
+      status: USER_STATUS.ACTIVE,
+      assigned_subjects: null,
+      assigned_classes: null
+    },
+    {
+      id: 'usr_stu_c_tanvi_005',
+      name: 'Tanvi Sawant',
+      email: 'tanvi.c@college.edu',
+      password_hash: studentHash,
+      role: ROLES.STUDENT,
+      department: 'Computer Engineering',
+      year: 'SE',
+      division: 'C',
       roll_number: '48',
       status: USER_STATUS.ACTIVE,
       assigned_subjects: null,
@@ -1514,6 +1586,113 @@ export async function seedDatabase() {
       'usr_fac_kgs_001'
     );
   }
+
+  // Computer Engineering SE-C Cohort Attendance Data
+  const seCStudents = [
+    { id: 'usr_stu_c_soham_001', name: 'Soham Deshmukh', rollNumber: '04' },
+    { id: 'usr_stu_c_aryan_002', name: 'Aryan Kadam', rollNumber: '15' },
+    { id: 'usr_stu_c_shifa_003', name: 'Shifa Siddiqui', rollNumber: '23' },
+    { id: 'usr_stu_c_riya_004', name: 'Riya Shah', rollNumber: '32' },
+    { id: 'usr_stu_c_tanvi_005', name: 'Tanvi Sawant', rollNumber: '48' }
+  ];
+
+  const seCSubjectProfiles = [
+    {
+      subjectId: 'sub_ce_dsgt',
+      facultyId: 'usr_fac_mvd_001',
+      studentPresentIndices: {
+        usr_stu_c_soham_001: [0, 1, 2, 3, 4, 5, 6, 7], // 8/10 = 80%
+        usr_stu_c_aryan_002: [0, 1, 2, 3, 4, 6, 7, 8, 9], // 9/10 = 90%
+        usr_stu_c_shifa_003: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], // 10/10 = 100%
+        usr_stu_c_riya_004: [0, 2, 3, 5, 6, 7, 8, 9], // 8/10 = 80%
+        usr_stu_c_tanvi_005: [0, 4] // 2/10 = 20% (<30% Defaulter)
+      }
+    },
+    {
+      subjectId: 'sub_ce_aoa',
+      facultyId: 'usr_fac_mp_patil_001',
+      studentPresentIndices: {
+        usr_stu_c_soham_001: [0, 1, 3, 4, 5, 7, 8, 9], // 8/10 = 80%
+        usr_stu_c_aryan_002: [0, 1, 2, 3, 5, 6, 7, 8], // 8/10 = 80%
+        usr_stu_c_shifa_003: [0, 1, 2, 3, 4, 5, 6, 7, 8], // 9/10 = 90%
+        usr_stu_c_riya_004: [1, 2, 3, 4, 5, 6, 7, 8, 9], // 9/10 = 90%
+        usr_stu_c_tanvi_005: [1, 5, 8] // 3/10 = 30%
+      }
+    },
+    {
+      subjectId: 'sub_ce_max',
+      facultyId: 'usr_fac_rb_001',
+      studentPresentIndices: {
+        usr_stu_c_soham_001: [0, 2, 4, 6, 8], // 5/10 = 50%
+        usr_stu_c_aryan_002: [0, 1, 2, 3, 4, 5, 6, 7, 8], // 9/10 = 90%
+        usr_stu_c_shifa_003: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], // 10/10 = 100%
+        usr_stu_c_riya_004: [0, 1, 3, 4, 6, 7, 9], // 7/10 = 70%
+        usr_stu_c_tanvi_005: [2] // 1/10 = 10% (<30% Defaulter)
+      }
+    },
+    {
+      subjectId: 'sub_ce_coa',
+      facultyId: 'usr_fac_asd_001',
+      studentPresentIndices: {
+        usr_stu_c_soham_001: [0, 1, 2, 3, 4, 5, 6, 7, 8], // 9/10 = 90%
+        usr_stu_c_aryan_002: [0, 1, 2, 4, 5, 6, 7, 8], // 8/10 = 80%
+        usr_stu_c_shifa_003: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], // 10/10 = 100%
+        usr_stu_c_riya_004: [0, 1, 2, 3, 5, 6, 7, 8, 9], // 9/10 = 90%
+        usr_stu_c_tanvi_005: [0, 1, 2, 3, 4, 5, 6, 7] // 8/10 = 80%
+      }
+    }
+  ];
+
+  for (const prof of seCSubjectProfiles) {
+    for (const st of seCStudents) {
+      const presIndices = prof.studentPresentIndices[st.id] || [];
+      let presentCount = 0;
+      let absentCount = 0;
+
+      for (let i = 0; i < sampleDates.length; i++) {
+        const d = sampleDates[i];
+        const isPres = presIndices.includes(i);
+        const status = isPres ? 'PRESENT' : 'ABSENT';
+        if (isPres) presentCount++; else absentCount++;
+
+        attRecStmt.run(
+          `att_rec_${st.id}_${prof.subjectId}_${d}`,
+          st.id,
+          prof.subjectId,
+          'Computer Engineering',
+          'SE',
+          'C',
+          d,
+          status,
+          prof.facultyId
+        );
+      }
+
+      const percentage = parseFloat(((presentCount / sampleDates.length) * 100).toFixed(1));
+      const isDefaulter = percentage < 30.0 ? 1 : 0;
+
+      attSumStmt.run(
+        `att_sum_${st.id}_${prof.subjectId}`,
+        st.id,
+        prof.subjectId,
+        'Computer Engineering',
+        'SE',
+        'C',
+        sampleDates[0],
+        sampleDates[sampleDates.length - 1],
+        sampleDates.length,
+        presentCount,
+        absentCount,
+        0,
+        percentage,
+        isDefaulter,
+        1, // Published
+        '2026-09-15 10:00:00',
+        prof.facultyId
+      );
+    }
+  }
+
 
 
   console.log('✅ [Seeder] Real college dataset (105 timetable lectures/labs) initialized successfully!');

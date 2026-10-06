@@ -1524,13 +1524,18 @@ export async function getStudentAttendance(req, res, next) {
     const year = student.year;
     const division = student.division;
 
-    // 1. Fetch all subjects for student's department
-    const subjects = queryAll(`
+    // 1. Fetch subjects for student's department (For Computer Engineering SE-C, keep ONLY DSGT, AOA, MAX, COA)
+    let subjects = queryAll(`
       SELECT id, name, code, department, semester, credits
       FROM subjects
       WHERE department = ?
       ORDER BY name ASC
     `, [department]);
+
+    if (department === 'Computer Engineering' && year === 'SE' && division === 'C') {
+      const allowedCodes = ['DSGT', 'AOA', 'MAX', 'COA'];
+      subjects = subjects.filter(s => allowedCodes.includes(s.code));
+    }
 
     // 2. Fetch all published summaries for this student
     const summaries = queryAll(`

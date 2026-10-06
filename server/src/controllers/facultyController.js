@@ -2403,4 +2403,25 @@ export async function getFacultyDefaultersList(req, res, next) {
   }
 }
 
+/**
+ * Get Subjects for Faculty
+ * GET /api/faculty/subjects
+ */
+export async function getFacultySubjects(req, res, next) {
+  try {
+    const { department, year, division } = req.query;
+    let sql = 'SELECT id, code, name, department, semester, credits FROM subjects';
+    const params = [];
+    if (department) {
+      sql += ' WHERE department = ?';
+      params.push(department);
+    }
+    sql += ' ORDER BY name ASC';
+    const subjects = queryAll(sql, params);
+    res.status(200).json({ success: true, subjects });
+  } catch (error) {
+    next(error);
+  }
+}
+
 
