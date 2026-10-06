@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
     year TEXT,                    -- e.g. "SE", "TE", "BE", "1st Year"
     division TEXT,                -- e.g. "A", "B", "C"
     roll_number TEXT,             -- e.g. "23"
+    enrollment_number TEXT,       -- e.g. "12502026"
     status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK(status IN ('ACTIVE', 'SUSPENDED', 'PENDING')),
     assigned_subjects TEXT,       -- JSON Array of subject strings / IDs (Faculty)
     assigned_classes TEXT,        -- JSON Array of class strings / IDs (Faculty)

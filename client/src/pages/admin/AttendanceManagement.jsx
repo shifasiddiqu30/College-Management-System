@@ -756,8 +756,9 @@ export default function AttendanceManagement() {
               <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: '850px' }}>
                 <thead>
                   <tr style={{ background: 'rgba(255, 255, 255, 0.04)' }}>
-                    <th style={{ width: '70px', padding: '0.75rem', textAlign: 'center', borderRight: '1px solid var(--border-subtle)' }}>Roll No</th>
-                    <th style={{ width: '200px', padding: '0.75rem', textAlign: 'left', borderRight: '1px solid var(--border-subtle)' }}>Student Name</th>
+                    <th style={{ width: '220px', padding: '0.75rem', textAlign: 'left', borderRight: '1px solid var(--border-subtle)' }}>Student Name</th>
+                    <th style={{ width: '80px', padding: '0.75rem', textAlign: 'center', borderRight: '1px solid var(--border-subtle)' }}>Roll No</th>
+                    <th style={{ width: '130px', padding: '0.75rem', textAlign: 'center', borderRight: '1px solid var(--border-subtle)' }}>Enrollment No</th>
                     <th style={{ width: '250px', padding: '0.75rem', textAlign: 'center', borderRight: '1px solid var(--border-subtle)', background: 'rgba(99, 102, 241, 0.1)' }}>
                       Attendance Status ({selectedDate})
                     </th>
@@ -796,11 +797,6 @@ export default function AttendanceManagement() {
 
                     return (
                       <tr key={st.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                        {/* Roll Number */}
-                        <td style={{ textAlign: 'center', padding: '0.6rem', fontWeight: 700, color: '#38bdf8', borderRight: '1px solid var(--border-subtle)' }}>
-                          {st.rollNumber || '—'}
-                        </td>
-
                         {/* Student Name */}
                         <td style={{ padding: '0.6rem', fontWeight: 600, color: '#fff', borderRight: '1px solid var(--border-subtle)' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -811,6 +807,16 @@ export default function AttendanceManagement() {
                               </span>
                             )}
                           </div>
+                        </td>
+
+                        {/* Roll Number */}
+                        <td style={{ textAlign: 'center', padding: '0.6rem', fontWeight: 700, color: '#38bdf8', borderRight: '1px solid var(--border-subtle)' }}>
+                          {st.rollNumber || '—'}
+                        </td>
+
+                        {/* Enrollment Number */}
+                        <td style={{ textAlign: 'center', padding: '0.6rem', fontWeight: 600, color: '#cbd5e1', borderRight: '1px solid var(--border-subtle)', fontSize: '0.85rem' }}>
+                          {st.enrollmentNumber || '—'}
                         </td>
 
                         {/* Interactive Attendance Options: Present / Absent / Late */}
@@ -974,8 +980,9 @@ export default function AttendanceManagement() {
               <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ background: 'rgba(255, 255, 255, 0.04)' }}>
-                    <th style={{ padding: '0.75rem', width: '80px', textAlign: 'center' }}>Roll No</th>
                     <th style={{ padding: '0.75rem', textAlign: 'left' }}>Student Name</th>
+                    <th style={{ padding: '0.75rem', width: '80px', textAlign: 'center' }}>Roll No</th>
+                    <th style={{ padding: '0.75rem', width: '120px', textAlign: 'center' }}>Enrollment No</th>
                     <th style={{ padding: '0.75rem', textAlign: 'center' }}>Conducted</th>
                     <th style={{ padding: '0.75rem', textAlign: 'center' }}>Present</th>
                     <th style={{ padding: '0.75rem', textAlign: 'center' }}>Absent</th>
@@ -995,11 +1002,14 @@ export default function AttendanceManagement() {
                           background: isDefaulter ? 'rgba(239, 68, 68, 0.04)' : 'transparent'
                         }}
                       >
+                        <td style={{ padding: '0.65rem', fontWeight: 600, color: '#fff' }}>
+                          {st.studentName}
+                        </td>
                         <td style={{ textAlign: 'center', padding: '0.65rem', fontWeight: 700, color: '#38bdf8' }}>
                           {st.rollNumber || '—'}
                         </td>
-                        <td style={{ padding: '0.65rem', fontWeight: 600, color: '#fff' }}>
-                          {st.studentName}
+                        <td style={{ textAlign: 'center', padding: '0.65rem', fontWeight: 600, color: '#cbd5e1' }}>
+                          {st.enrollmentNumber || '—'}
                         </td>
                         <td style={{ textAlign: 'center', padding: '0.65rem', color: '#94a3b8' }}>
                           {st.totalConducted}
@@ -1094,8 +1104,9 @@ export default function AttendanceManagement() {
               <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ background: 'rgba(239, 68, 68, 0.08)' }}>
-                    <th style={{ padding: '0.75rem', width: '80px', textAlign: 'center' }}>Roll No</th>
                     <th style={{ padding: '0.75rem', textAlign: 'left' }}>Student Name</th>
+                    <th style={{ padding: '0.75rem', width: '80px', textAlign: 'center' }}>Roll No</th>
+                    <th style={{ padding: '0.75rem', width: '120px', textAlign: 'center' }}>Enrollment No</th>
                     <th style={{ padding: '0.75rem', textAlign: 'left' }}>Subject</th>
                     <th style={{ padding: '0.75rem', textAlign: 'center' }}>Conducted</th>
                     <th style={{ padding: '0.75rem', textAlign: 'center' }}>Present</th>
@@ -1107,11 +1118,14 @@ export default function AttendanceManagement() {
                 <tbody>
                   {defaultersList.map(def => (
                     <tr key={def.id} style={{ borderBottom: '1px solid rgba(239, 68, 68, 0.15)', background: 'rgba(239, 68, 68, 0.02)' }}>
+                      <td style={{ padding: '0.65rem', fontWeight: 700, color: '#fff' }}>
+                        {def.studentName}
+                      </td>
                       <td style={{ textAlign: 'center', padding: '0.65rem', fontWeight: 800, color: '#ef4444' }}>
                         {def.rollNumber || '—'}
                       </td>
-                      <td style={{ padding: '0.65rem', fontWeight: 700, color: '#fff' }}>
-                        {def.studentName}
+                      <td style={{ textAlign: 'center', padding: '0.65rem', fontWeight: 600, color: '#cbd5e1' }}>
+                        {def.enrollmentNumber || '—'}
                       </td>
                       <td style={{ padding: '0.65rem', color: '#818cf8', fontWeight: 600 }}>
                         {def.subjectName} ({def.subjectCode})

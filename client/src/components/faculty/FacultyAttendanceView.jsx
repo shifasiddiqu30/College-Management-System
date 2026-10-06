@@ -665,8 +665,9 @@ export default function FacultyAttendanceView() {
               <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: '850px' }}>
                 <thead>
                   <tr style={{ background: 'rgba(255, 255, 255, 0.04)' }}>
-                    <th style={{ width: '70px', padding: '0.75rem', textAlign: 'center', borderRight: '1px solid var(--border-subtle)' }}>Roll No</th>
-                    <th style={{ width: '200px', padding: '0.75rem', textAlign: 'left', borderRight: '1px solid var(--border-subtle)' }}>Student Name</th>
+                    <th style={{ width: '220px', padding: '0.75rem', textAlign: 'left', borderRight: '1px solid var(--border-subtle)' }}>Student Name</th>
+                    <th style={{ width: '80px', padding: '0.75rem', textAlign: 'center', borderRight: '1px solid var(--border-subtle)' }}>Roll No</th>
+                    <th style={{ width: '130px', padding: '0.75rem', textAlign: 'center', borderRight: '1px solid var(--border-subtle)' }}>Enrollment No</th>
                     <th style={{ width: '250px', padding: '0.75rem', textAlign: 'center', borderRight: '1px solid var(--border-subtle)', background: 'rgba(99, 102, 241, 0.1)' }}>
                       Attendance Status ({selectedDate})
                     </th>
@@ -704,9 +705,6 @@ export default function FacultyAttendanceView() {
 
                     return (
                       <tr key={st.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                        <td style={{ textAlign: 'center', padding: '0.6rem', fontWeight: 700, color: '#38bdf8', borderRight: '1px solid var(--border-subtle)' }}>
-                          {st.rollNumber || '—'}
-                        </td>
                         <td style={{ padding: '0.6rem', fontWeight: 600, color: '#fff', borderRight: '1px solid var(--border-subtle)' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <span>{st.name}</span>
@@ -716,6 +714,12 @@ export default function FacultyAttendanceView() {
                               </span>
                             )}
                           </div>
+                        </td>
+                        <td style={{ textAlign: 'center', padding: '0.6rem', fontWeight: 700, color: '#38bdf8', borderRight: '1px solid var(--border-subtle)' }}>
+                          {st.rollNumber || '—'}
+                        </td>
+                        <td style={{ textAlign: 'center', padding: '0.6rem', fontWeight: 600, color: '#cbd5e1', borderRight: '1px solid var(--border-subtle)', fontSize: '0.85rem' }}>
+                          {st.enrollmentNumber || '—'}
                         </td>
 
                         {/* Interactive Attendance Options: Present / Absent / Late */}
@@ -877,8 +881,9 @@ export default function FacultyAttendanceView() {
             <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: 'rgba(255, 255, 255, 0.04)' }}>
+                  <th style={{ width: '220px', padding: '0.75rem', textAlign: 'left' }}>Student Name</th>
                   <th style={{ width: '80px', padding: '0.75rem', textAlign: 'center' }}>Roll No</th>
-                  <th style={{ padding: '0.75rem', textAlign: 'left' }}>Student Name</th>
+                  <th style={{ width: '130px', padding: '0.75rem', textAlign: 'center' }}>Enrollment No</th>
                   <th style={{ width: '150px', padding: '0.75rem', textAlign: 'center' }}>Conducted Classes</th>
                   <th style={{ width: '150px', padding: '0.75rem', textAlign: 'center' }}>Present Classes</th>
                   <th style={{ width: '150px', padding: '0.75rem', textAlign: 'center' }}>Absent Classes</th>
@@ -904,11 +909,14 @@ export default function FacultyAttendanceView() {
 
                   return (
                     <tr key={st.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                      <td style={{ padding: '0.75rem', fontWeight: 600, color: '#fff' }}>
+                        {st.name}
+                      </td>
                       <td style={{ textAlign: 'center', padding: '0.75rem', fontWeight: 700, color: '#38bdf8' }}>
                         {st.rollNumber || '—'}
                       </td>
-                      <td style={{ padding: '0.75rem', fontWeight: 600, color: '#fff' }}>
-                        {st.name}
+                      <td style={{ textAlign: 'center', padding: '0.75rem', fontWeight: 600, color: '#cbd5e1' }}>
+                        {st.enrollmentNumber || '—'}
                       </td>
                       <td style={{ textAlign: 'center', padding: '0.75rem', color: '#94a3b8' }}>
                         {total}
@@ -988,24 +996,28 @@ export default function FacultyAttendanceView() {
               <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ background: 'rgba(239, 68, 68, 0.1)' }}>
+                    <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fca5a5' }}>Student Name</th>
                     <th style={{ width: '80px', padding: '0.75rem', textAlign: 'center', color: '#fca5a5' }}>Roll No</th>
-                    <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fca5a5' }}>Student</th>
+                    <th style={{ width: '120px', padding: '0.75rem', textAlign: 'center', color: '#fca5a5' }}>Enrollment No</th>
                     <th style={{ width: '160px', padding: '0.75rem', textAlign: 'left', color: '#fca5a5' }}>Subject</th>
-                    <th style={{ width: '120px', padding: '0.75rem', textAlign: 'center', color: '#fca5a5' }}>Conducted</th>
-                    <th style={{ width: '120px', padding: '0.75rem', textAlign: 'center', color: '#fca5a5' }}>Attended</th>
-                    <th style={{ width: '140px', padding: '0.75rem', textAlign: 'center', color: '#fca5a5' }}>Attendance</th>
-                    <th style={{ width: '150px', padding: '0.75rem', textAlign: 'center', color: '#fca5a5' }}>Status</th>
+                    <th style={{ width: '100px', padding: '0.75rem', textAlign: 'center', color: '#fca5a5' }}>Conducted</th>
+                    <th style={{ width: '100px', padding: '0.75rem', textAlign: 'center', color: '#fca5a5' }}>Attended</th>
+                    <th style={{ width: '120px', padding: '0.75rem', textAlign: 'center', color: '#fca5a5' }}>Attendance</th>
+                    <th style={{ width: '130px', padding: '0.75rem', textAlign: 'center', color: '#fca5a5' }}>Status</th>
                     <th style={{ padding: '0.75rem', textAlign: 'left', color: '#fca5a5' }}>Compliance Warning</th>
                   </tr>
                 </thead>
                 <tbody>
                   {defaultersList.map(d => (
                     <tr key={d.id || d.studentId} style={{ borderBottom: '1px solid rgba(239, 68, 68, 0.15)' }}>
+                      <td style={{ padding: '0.75rem', fontWeight: 700, color: '#fff' }}>
+                        {d.studentName}
+                      </td>
                       <td style={{ textAlign: 'center', padding: '0.75rem', fontWeight: 700, color: '#38bdf8' }}>
                         {d.rollNumber || '—'}
                       </td>
-                      <td style={{ padding: '0.75rem', fontWeight: 700, color: '#fff' }}>
-                        {d.studentName}
+                      <td style={{ textAlign: 'center', padding: '0.75rem', fontWeight: 600, color: '#cbd5e1' }}>
+                        {d.enrollmentNumber || '—'}
                       </td>
                       <td style={{ padding: '0.75rem', color: '#818cf8', fontWeight: 600 }}>
                         {d.subjectName || selectedSubject?.name || 'Subject'}

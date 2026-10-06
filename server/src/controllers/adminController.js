@@ -2099,7 +2099,7 @@ export async function getAdminAttendanceSheet(req, res, next) {
 
     const students = queryAll(`
       SELECT 
-        id, name, email, roll_number as rollNumber, department, year, division
+        id, name, email, roll_number as rollNumber, enrollment_number as enrollmentNumber, department, year, division
       FROM users
       WHERE role = 'STUDENT' AND department = ? AND year = ? AND division = ? AND status = 'ACTIVE'
       ORDER BY CAST(roll_number AS INTEGER) ASC, name ASC
@@ -2138,7 +2138,7 @@ export async function getAdminAttendanceSheet(req, res, next) {
         s.total_absent as totalAbsent, s.total_late as totalLate,
         s.attendance_percentage as attendancePercentage, s.is_defaulter as isDefaulter,
         s.is_published as isPublished, s.published_at as publishedAt, s.published_by as publishedBy,
-        u.name as studentName, u.roll_number as rollNumber
+        u.name as studentName, u.roll_number as rollNumber, u.enrollment_number as enrollmentNumber
       FROM attendance_summaries s
       JOIN users u ON s.student_id = u.id
       WHERE s.department = ? AND s.year = ? AND s.division = ? AND s.subject_id = ?
@@ -2248,7 +2248,7 @@ export async function countAdminAttendancePercentage(req, res, next) {
     }
 
     const students = queryAll(`
-      SELECT id, name, roll_number as rollNumber, email
+      SELECT id, name, roll_number as rollNumber, enrollment_number as enrollmentNumber, email
       FROM users
       WHERE role = 'STUDENT' AND department = ? AND year = ? AND division = ? AND status = 'ACTIVE'
       ORDER BY CAST(roll_number AS INTEGER) ASC, name ASC
@@ -2461,7 +2461,7 @@ export async function getAdminDefaultersList(req, res, next) {
         s.total_absent as totalAbsent, s.total_late as totalLate,
         s.attendance_percentage as attendancePercentage, s.is_defaulter as isDefaulter,
         s.is_published as isPublished, s.published_at as publishedAt,
-        u.name as studentName, u.roll_number as rollNumber, u.email as studentEmail,
+        u.name as studentName, u.roll_number as rollNumber, u.enrollment_number as enrollmentNumber, u.email as studentEmail,
         sub.name as subjectName, sub.code as subjectCode
       FROM attendance_summaries s
       JOIN users u ON s.student_id = u.id

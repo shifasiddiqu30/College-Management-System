@@ -529,77 +529,113 @@ export async function seedDatabase() {
       assigned_subjects: null,
       assigned_classes: null
     },
-    // Computer Engineering SE-C Cohort
-    {
-      id: 'usr_stu_c_soham_001',
-      name: 'Soham Deshmukh',
-      email: 'soham.c@college.edu',
+    // Computer Engineering SE-C Cohort (Full 90 Students from Compiled Attendance July-Aug-Sept)
+    ...[
+      { roll: '141', ien: '12502026', name: 'Salve Sarthak Mahendra' },
+      { roll: '142', ien: '12502028', name: 'Salve Swati Gyanchand' },
+      { roll: '143', ien: '12312003', name: 'Satve Mrunal Umesh' },
+      { roll: '144', ien: '12312125', name: 'Sawant Swara Jatin' },
+      { roll: '145', ien: '12312107', name: 'Shaikh Hameedbano Abdullah' },
+      { roll: '146', ien: '12302044', name: 'SHAIKH WALEED RAFIQUE' },
+      { roll: '147', ien: '12302025', name: 'Shelar Shreyas Pritam' },
+      { roll: '148', ien: '12302011', name: 'Shenkar Sohini Ajit' },
+      { roll: '149', ien: '12302059', name: 'Shetty Harshita Shekhar' },
+      { roll: '150', ien: '12312127', name: 'Shinde Shubham Hanumant' },
+      { roll: '151', ien: '12312003', name: 'Shirke Sandhya Mahadev' },
+      { roll: '152', ien: '12302017', name: 'Shivandalkar Prasad Prakash' },
+      { roll: '153', ien: '12302001', name: 'Siddiqui Shifa Sarfraz' },
+      { roll: '154', ien: '12312089', name: 'Sinalkar Saksham Girish' },
+      { roll: '155', ien: '12312103', name: 'Singh Ravikant Ashok' },
+      { roll: '156', ien: '12302003', name: 'Singh Neelam Ramdharisingh' },
+      { roll: '157', ien: '12302019', name: 'Singh Purva Amit Kumar' },
+      { roll: '158', ien: '12302067', name: 'Singh Rajveer Himanshu' },
+      { roll: '159', ien: '12312074', name: 'Sonawane Soham Mangesh' },
+      { roll: '160', ien: '12312086', name: 'Sonawane Yashraj Shyam' },
+      { roll: '161', ien: '12312079', name: 'Soni Shreya Mahendra' },
+      { roll: '162', ien: '12302090', name: 'Suradkar Suhas Sandeep' },
+      { roll: '163', ien: '12312085', name: 'Suryavanshi Harshad Chandrakant' },
+      { roll: '164', ien: '12302021', name: 'Tare Aryan Umesh' },
+      { roll: '165', ien: '12302049', name: 'Teja Tanushka Tulshidas' },
+      { roll: '166', ien: '12312019', name: 'Thakare Kaustubh Chandrakant' },
+      { roll: '167', ien: '12302078', name: 'Thakur Bhuvi Vikas' },
+      { roll: '168', ien: '12312053', name: 'Telkute Pradeep Rajendra' },
+      { roll: '169', ien: '12312067', name: 'Ugale Priyanka Anil' },
+      { roll: '170', ien: '12312061', name: 'Uparkar Rudra Santosh' },
+      { roll: '171', ien: '12302051', name: 'Vaikar Arpan Kailas' },
+      { roll: '172', ien: '12302042', name: 'Varma Muskan Dheeraj' },
+      { roll: '173', ien: '12302049', name: 'Varge Vedant Ramakant' },
+      { roll: '174', ien: '12302012', name: 'Varma Shraddha Jagdeep' },
+      { roll: '175', ien: '12312073', name: 'Vibhute Niranjan Sachin' },
+      { roll: '176', ien: '12302083', name: 'V. Yuktha (Vijay Kumar)' },
+      { roll: '177', ien: '12312101', name: 'Viste Gokul Ramchandra' },
+      { roll: '178', ien: '12312142', name: 'Wankhede Nitesh Santosh' },
+      { roll: '179', ien: '12312005', name: 'Yadav Pushpendra Ram Bharat' },
+      { roll: '180', ien: '12312111', name: 'Zogade Niraj Rajesh' },
+      { roll: '181', ien: '124A2060', name: 'Khairnar Onkar Samadhan' },
+      { roll: '182', ien: '124A2046', name: 'Bhalke Ritesh Rajaram' },
+      { roll: '183', ien: '12312092', name: 'Dhete Ayush Mahesh' },
+      { roll: '184', ien: '124A2049', name: 'Dhegadekar Yash Vaibhav' },
+      { roll: '185', ien: '124A2027', name: 'Pagar Anushka Satish' },
+      { roll: '186', ien: '124A2052', name: 'Sutar Diksha Rajesh' },
+      { roll: '187', ien: '124A2070', name: 'Mulla Hanzala Mohsin' },
+      { roll: '188', ien: '124A2041', name: 'Khan Kamran Siraj' },
+      { roll: '189', ien: '124A2054', name: 'Milkele Bhushan Santosh' },
+      { roll: '190', ien: '124A2045', name: 'Mhatre Tanish Chandrakant' },
+      { roll: '191', ien: '12312066', name: 'Pandey Surabhi Subhash' },
+      { roll: '192', ien: '124A2001', name: 'Daghole Jatin Chintamani' },
+      { roll: '193', ien: '12312107', name: 'Rathod Apoorva Balu' },
+      { roll: '194', ien: '12312083', name: 'Vaidya Aryan Rajendra' },
+      { roll: '195', ien: '12312097', name: 'Patil Vishruth Satish' },
+      { roll: '196', ien: '12312501', name: 'Bharti Aarya Pankaj' },
+      { roll: '197', ien: '12312503', name: 'Ranthe Tanmay Anant' },
+      { roll: '198', ien: '124A2020', name: 'Dhavi Parth Jitendra' },
+      { roll: '199', ien: '12312064', name: 'Shaikh MohammadSaaleh MohammedIshaq' },
+      { roll: '200', ien: '12312104', name: 'Lavatekar Shravan Yogesh' },
+      { roll: '201', ien: '12312141', name: 'Lokhande Varsha Santosh' },
+      { roll: '202', ien: '12312143', name: 'Amrutkar Nihar Tanaji' },
+      { roll: '203', ien: '124A2013', name: 'Telang Purba Indal' },
+      { roll: '204', ien: '12312123', name: 'Zarpahile Piyush Vilas' },
+      { roll: '205', ien: '12312028', name: 'Jadhav Pratik Rajendra' },
+      { roll: '206', ien: '124A2017', name: 'Shaikh Mohammed Sarfaraz' },
+      { roll: '207', ien: '12312014', name: 'Munge Om Pramod' },
+      { roll: '208', ien: '12312015', name: 'Sawant Divyada Subhash' },
+      { roll: '209', ien: '12312020', name: 'Kapse Apeksha Madhukar' },
+      { roll: '210', ien: '12312023', name: 'Dalvi Harshad Dayanand' },
+      { roll: '211', ien: '12312025', name: 'Dhoot Mitrali Vijay' },
+      { roll: '212', ien: '12312040', name: 'Shravan Manasi Mukund' },
+      { roll: '213', ien: '12312042', name: 'Bhalke Tanika Vinayak' },
+      { roll: '214', ien: '12312049', name: 'Dhale Omkar Chandrakant' },
+      { roll: '215', ien: '12312024', name: 'Kasar Hitesh Rajendra' },
+      { roll: '216', ien: '12312050', name: 'Thakare Sumit Ramesh' },
+      { roll: '217', ien: '12312058', name: 'Mokashi Rushita Sunil' },
+      { roll: '218', ien: '12312041', name: 'Mhatre Devyani Dilip' },
+      { roll: '219', ien: '12312052', name: 'Madele Shreya Santosh' },
+      { roll: '220', ien: '12312029', name: 'Bandawane Yash Mukesh' },
+      { roll: '221', ien: '12302047', name: 'Bapatla Veeresh Pramod' },
+      { roll: '222', ien: '12502029', name: 'Andugula Khushi Mukesh' },
+      { roll: '223', ien: '124A2054', name: 'Patil Parth Sanjay' },
+      { roll: '224', ien: '124A2056', name: 'Pal Kamran Santosh' },
+      { roll: '225', ien: '124A2040', name: 'Gangurde Lohit Sanjay' },
+      { roll: '226', ien: '124A2068', name: 'Thakur Shravan Shankar' },
+      { roll: '227', ien: '124A2043', name: 'Mhatre Krushna Yogesh' },
+      { roll: '228', ien: '124A2004', name: 'Bhoir Sarthak' },
+      { roll: '229', ien: '124A2046', name: 'Aturkar Kartik' },
+      { roll: '230', ien: '124A2061', name: 'Bhatia Bhavyam Alfiaz' }
+    ].map(s => ({
+      id: `usr_stu_c_${s.roll}`,
+      name: s.name,
+      email: `student.${s.roll}@college.edu`,
       password_hash: studentHash,
       role: ROLES.STUDENT,
       department: 'Computer Engineering',
       year: 'SE',
       division: 'C',
-      roll_number: '04',
+      roll_number: s.roll,
+      enrollment_number: s.ien,
       status: USER_STATUS.ACTIVE,
       assigned_subjects: null,
       assigned_classes: null
-    },
-    {
-      id: 'usr_stu_c_aryan_002',
-      name: 'Aryan Kadam',
-      email: 'aryan.c@college.edu',
-      password_hash: studentHash,
-      role: ROLES.STUDENT,
-      department: 'Computer Engineering',
-      year: 'SE',
-      division: 'C',
-      roll_number: '15',
-      status: USER_STATUS.ACTIVE,
-      assigned_subjects: null,
-      assigned_classes: null
-    },
-    {
-      id: 'usr_stu_c_shifa_003',
-      name: 'Shifa Siddiqui',
-      email: 'shifa.c@college.edu',
-      password_hash: studentHash,
-      role: ROLES.STUDENT,
-      department: 'Computer Engineering',
-      year: 'SE',
-      division: 'C',
-      roll_number: '23',
-      status: USER_STATUS.ACTIVE,
-      assigned_subjects: null,
-      assigned_classes: null
-    },
-    {
-      id: 'usr_stu_c_riya_004',
-      name: 'Riya Shah',
-      email: 'riya.c@college.edu',
-      password_hash: studentHash,
-      role: ROLES.STUDENT,
-      department: 'Computer Engineering',
-      year: 'SE',
-      division: 'C',
-      roll_number: '32',
-      status: USER_STATUS.ACTIVE,
-      assigned_subjects: null,
-      assigned_classes: null
-    },
-    {
-      id: 'usr_stu_c_tanvi_005',
-      name: 'Tanvi Sawant',
-      email: 'tanvi.c@college.edu',
-      password_hash: studentHash,
-      role: ROLES.STUDENT,
-      department: 'Computer Engineering',
-      year: 'SE',
-      division: 'C',
-      roll_number: '48',
-      status: USER_STATUS.ACTIVE,
-      assigned_subjects: null,
-      assigned_classes: null
-    },
+    })),
     // Computer Engineering SE-A Cohort
     {
       id: 'usr_stu_aditya_009',
@@ -660,14 +696,23 @@ export async function seedDatabase() {
     }
   ];
 
+  // Purge legacy student records for CE SE-C before inserting current verified cohort
+  db.exec(`
+    PRAGMA foreign_keys = OFF;
+    DELETE FROM attendance_records WHERE student_id IN (SELECT id FROM users WHERE role = 'STUDENT' AND department = 'Computer Engineering' AND year = 'SE' AND division = 'C');
+    DELETE FROM attendance_summaries WHERE student_id IN (SELECT id FROM users WHERE role = 'STUDENT' AND department = 'Computer Engineering' AND year = 'SE' AND division = 'C');
+    DELETE FROM users WHERE role = 'STUDENT' AND department = 'Computer Engineering' AND year = 'SE' AND division = 'C';
+    PRAGMA foreign_keys = ON;
+  `);
+
   const userStmt = db.prepare(`
     INSERT OR REPLACE INTO users (
       id, name, email, password_hash, role, department, 
-      year, division, roll_number, status, 
+      year, division, roll_number, enrollment_number, status, 
       assigned_subjects, assigned_classes, updated_at
     ) VALUES (
       ?, ?, ?, ?, ?, ?, 
-      ?, ?, ?, ?, 
+      ?, ?, ?, ?, ?, 
       ?, ?, CURRENT_TIMESTAMP
     )
   `);
@@ -683,6 +728,7 @@ export async function seedDatabase() {
       user.year,
       user.division,
       user.roll_number,
+      user.enrollment_number || null,
       user.status,
       user.assigned_subjects,
       user.assigned_classes
@@ -1587,84 +1633,44 @@ export async function seedDatabase() {
     );
   }
 
-  // Computer Engineering SE-C Cohort Attendance Data
-  const seCStudents = [
-    { id: 'usr_stu_c_soham_001', name: 'Soham Deshmukh', rollNumber: '04' },
-    { id: 'usr_stu_c_aryan_002', name: 'Aryan Kadam', rollNumber: '15' },
-    { id: 'usr_stu_c_shifa_003', name: 'Shifa Siddiqui', rollNumber: '23' },
-    { id: 'usr_stu_c_riya_004', name: 'Riya Shah', rollNumber: '32' },
-    { id: 'usr_stu_c_tanvi_005', name: 'Tanvi Sawant', rollNumber: '48' }
+  // Computer Engineering SE-C Cohort Attendance Data (All 90 Students)
+  const seCSubjects = [
+    { subjectId: 'sub_ce_dsgt', facultyId: 'usr_fac_mvd_001', code: 'DSGT' },
+    { subjectId: 'sub_ce_aoa', facultyId: 'usr_fac_mp_patil_001', code: 'AOA' },
+    { subjectId: 'sub_ce_max', facultyId: 'usr_fac_rb_001', code: 'MAX' },
+    { subjectId: 'sub_ce_coa', facultyId: 'usr_fac_asd_001', code: 'COA' }
   ];
 
-  const seCSubjectProfiles = [
-    {
-      subjectId: 'sub_ce_dsgt',
-      facultyId: 'usr_fac_mvd_001',
-      studentPresentIndices: {
-        usr_stu_c_soham_001: [0, 1, 2, 3, 4, 5, 6, 7], // 8/10 = 80%
-        usr_stu_c_aryan_002: [0, 1, 2, 3, 4, 6, 7, 8, 9], // 9/10 = 90%
-        usr_stu_c_shifa_003: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], // 10/10 = 100%
-        usr_stu_c_riya_004: [0, 2, 3, 5, 6, 7, 8, 9], // 8/10 = 80%
-        usr_stu_c_tanvi_005: [0, 4] // 2/10 = 20% (<30% Defaulter)
-      }
-    },
-    {
-      subjectId: 'sub_ce_aoa',
-      facultyId: 'usr_fac_mp_patil_001',
-      studentPresentIndices: {
-        usr_stu_c_soham_001: [0, 1, 3, 4, 5, 7, 8, 9], // 8/10 = 80%
-        usr_stu_c_aryan_002: [0, 1, 2, 3, 5, 6, 7, 8], // 8/10 = 80%
-        usr_stu_c_shifa_003: [0, 1, 2, 3, 4, 5, 6, 7, 8], // 9/10 = 90%
-        usr_stu_c_riya_004: [1, 2, 3, 4, 5, 6, 7, 8, 9], // 9/10 = 90%
-        usr_stu_c_tanvi_005: [1, 5, 8] // 3/10 = 30%
-      }
-    },
-    {
-      subjectId: 'sub_ce_max',
-      facultyId: 'usr_fac_rb_001',
-      studentPresentIndices: {
-        usr_stu_c_soham_001: [0, 2, 4, 6, 8], // 5/10 = 50%
-        usr_stu_c_aryan_002: [0, 1, 2, 3, 4, 5, 6, 7, 8], // 9/10 = 90%
-        usr_stu_c_shifa_003: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], // 10/10 = 100%
-        usr_stu_c_riya_004: [0, 1, 3, 4, 6, 7, 9], // 7/10 = 70%
-        usr_stu_c_tanvi_005: [2] // 1/10 = 10% (<30% Defaulter)
-      }
-    },
-    {
-      subjectId: 'sub_ce_coa',
-      facultyId: 'usr_fac_asd_001',
-      studentPresentIndices: {
-        usr_stu_c_soham_001: [0, 1, 2, 3, 4, 5, 6, 7, 8], // 9/10 = 90%
-        usr_stu_c_aryan_002: [0, 1, 2, 4, 5, 6, 7, 8], // 8/10 = 80%
-        usr_stu_c_shifa_003: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], // 10/10 = 100%
-        usr_stu_c_riya_004: [0, 1, 2, 3, 5, 6, 7, 8, 9], // 9/10 = 90%
-        usr_stu_c_tanvi_005: [0, 1, 2, 3, 4, 5, 6, 7] // 8/10 = 80%
-      }
-    }
-  ];
+  const seCStudentList = sampleUsers.filter(u => u.department === 'Computer Engineering' && u.year === 'SE' && u.division === 'C');
 
-  for (const prof of seCSubjectProfiles) {
-    for (const st of seCStudents) {
-      const presIndices = prof.studentPresentIndices[st.id] || [];
+  for (const subj of seCSubjects) {
+    for (const st of seCStudentList) {
+      const rollInt = parseInt(st.roll_number, 10) || 141;
+      
+      // Deterministic attendance profile
+      // Defaulters: roll 146, 171, 188, 204, 221
+      const isDefaulterCandidate = (rollInt % 23 === 0 || rollInt === 146 || rollInt === 171 || rollInt === 188 || rollInt === 204 || rollInt === 221);
+      const presentCountTarget = isDefaulterCandidate ? 2 : ((rollInt % 3 === 0) ? 9 : ((rollInt % 2 === 0) ? 8 : 10));
+
       let presentCount = 0;
       let absentCount = 0;
 
       for (let i = 0; i < sampleDates.length; i++) {
         const d = sampleDates[i];
-        const isPres = presIndices.includes(i);
+        const isPres = isDefaulterCandidate ? (i === 0 || i === 4) : (i < presentCountTarget);
         const status = isPres ? 'PRESENT' : 'ABSENT';
         if (isPres) presentCount++; else absentCount++;
 
         attRecStmt.run(
-          `att_rec_${st.id}_${prof.subjectId}_${d}`,
+          `att_rec_${st.id}_${subj.subjectId}_${d}`,
           st.id,
-          prof.subjectId,
+          subj.subjectId,
           'Computer Engineering',
           'SE',
           'C',
           d,
           status,
-          prof.facultyId
+          subj.facultyId
         );
       }
 
@@ -1672,9 +1678,9 @@ export async function seedDatabase() {
       const isDefaulter = percentage < 30.0 ? 1 : 0;
 
       attSumStmt.run(
-        `att_sum_${st.id}_${prof.subjectId}`,
+        `att_sum_${st.id}_${subj.subjectId}`,
         st.id,
-        prof.subjectId,
+        subj.subjectId,
         'Computer Engineering',
         'SE',
         'C',
@@ -1688,7 +1694,7 @@ export async function seedDatabase() {
         isDefaulter,
         1, // Published
         '2026-09-15 10:00:00',
-        prof.facultyId
+        subj.facultyId
       );
     }
   }

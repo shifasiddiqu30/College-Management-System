@@ -31,6 +31,9 @@ export function initDB() {
       }
     };
 
+    // Users Migrations
+    addColumnIfMissing('users', 'enrollment_number', 'TEXT');
+
     // Departments Migrations
     addColumnIfMissing('departments', 'status', "TEXT NOT NULL DEFAULT 'Active'");
     addColumnIfMissing('departments', 'updated_at', "DATETIME");
