@@ -2073,4 +2073,463 @@ export async function getFacultyAvailability(req, res, next) {
   }
 }
 
+// ============================================================================
+// ADMIN ATTENDANCE MANAGEMENT MODULE
+// ============================================================================
+
+/**
+ * Get Admin Attendance Sheet for selected Class & Subject
+ * GET /api/admin/attendance/sheet
+ */
+export async function getAdminAttendanceSheet(req, res, next) {
+  try {
+    const { department, year, division, subjectId, date, startDate, endDate } = req.query;
+
+    if (!department || !year || !division || !subjectId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Department, Year, Division and Subject are required to load attendance sheet'
+      });
+    }
+
+    const subject = queryOne('SELECT id, name, code, department FROM subjects WHERE id = ? OR code = ?', [subjectId, subjectId]);
+    if (!subject) {
+      return res.status(404).json({ success: false, message: 'Subject not found' });
+    }
+
+    const students = queryAll(`
+      SELECT 
+        id, name, email, roll_number as rollNumber, department, year, division
+      FROM users
+      WHERE role = 'STUDENT' AND department = ? AND year = ? AND division = ? AND status = 'ACTIVE'
+      ORDER BY CAST(roll_number AS INTEGER) ASC, name ASC
+    `, [department, year, division]);
+
+    let dateFilterQuery = 'WHERE department = ? AND year = ? AND division = ? AND subject_id = ?';
+    const dateParams = [department, year, division, subject.id];
+
+    if (startDate && endDate) {
+      dateFilterQuery += ' AND date >= ? AND date <= ?';
+      dateParams.push(startDate, endDate);
+    } else if (date) {
+      dateFilterQuery += ' AND date = ?';
+      dateParams.push(date);
+    }
+
+    const recordedDates = queryAll(`
+      SELECT DISTINCT date 
+      FROM attendance_records 
+      ${dateFilterQuery}
+      ORDER BY date ASC
+    `, dateParams).map(r => r.date);
+
+    const rawRecords = queryAll(`
+      SELECT 
+        id, student_id as studentId, subject_id as subjectId, date, status, marked_by as markedBy, updated_at as updatedAt
+      FROM attendance_records
+      ${dateFilterQuery}
+    `, dateParams);
+
+    const rawSummaries = queryAll(`
+      SELECT 
+        s.id, s.student_id as studentId, s.subject_id as subjectId, s.department, s.year, s.division,
+        s.start_date as startDate, s.end_date as endDate,
+        s.total_conducted as totalConducted, s.total_present as totalPresent,
+        s.total_absent as totalAbsent, s.total_late as totalLate,
+        s.attendance_percentage as attendancePercentage, s.is_defaulter as isDefaulter,
+        s.is_published as isPublished, s.published_at as publishedAt, s.published_by as publishedBy,
+        u.name as studentName, u.roll_number as rollNumber
+      FROM attendance_summaries s
+      JOIN users u ON s.student_id = u.id
+      WHERE s.department = ? AND s.year = ? AND s.division = ? AND s.subject_id = ?
+      ORDER BY CAST(u.roll_number AS INTEGER) ASC, u.name ASC
+    `, [department, year, division, subject.id]);
+
+    const isCohortPublished = rawSummaries.length > 0 && rawSummaries.some(s => s.isPublished === 1 || s.isPublished === true);
+    const publishedAt = rawSummaries.length > 0 ? rawSummaries[0].publishedAt : null;
+
+    res.status(200).json({
+      success: true,
+      subject,
+      cohort: { department, year, division },
+      students,
+      dates: recordedDates,
+      records: rawRecords,
+      summary: {
+        isPublished: isCohortPublished,
+        publishedAt,
+        totalConducted: recordedDates.length,
+        students: rawSummaries
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Save Daily Attendance by Admin
+ * POST /api/admin/attendance/save-daily
+ */
+export async function saveAdminDailyAttendance(req, res, next) {
+  try {
+    const { department, year, division, subjectId, date, records } = req.body;
+
+    if (!department || !year || !division || !subjectId || !date || !Array.isArray(records)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Department, Year, Division, Subject, Date and student records array are required'
+      });
+    }
+
+    const subject = queryOne('SELECT id, name, code FROM subjects WHERE id = ? OR code = ?', [subjectId, subjectId]);
+    if (!subject) {
+      return res.status(404).json({ success: false, message: 'Subject not found' });
+    }
+
+    const insertOrReplaceStmt = `
+      INSERT INTO attendance_records (id, student_id, subject_id, department, year, division, date, status, marked_by, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(student_id, subject_id, date) DO UPDATE SET
+        status = excluded.status,
+        department = excluded.department,
+        year = excluded.year,
+        division = excluded.division,
+        marked_by = excluded.marked_by,
+        updated_at = CURRENT_TIMESTAMP
+    `;
+
+    for (const item of records) {
+      if (!item.studentId) continue;
+      const status = (item.status || 'PRESENT').toUpperCase();
+      const validStatus = ['PRESENT', 'ABSENT', 'LATE'].includes(status) ? status : 'PRESENT';
+      const recordId = `att_rec_${item.studentId}_${subject.id}_${date}`;
+
+      execute(insertOrReplaceStmt, [
+        recordId,
+        item.studentId,
+        subject.id,
+        department,
+        year,
+        division,
+        date,
+        validStatus,
+        req.user.id
+      ]);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Daily attendance for ${subject.name} on ${date} saved successfully (${records.length} students recorded).`
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Admin Count & Compute Attendance Percentage across all students in Class
+ * POST /api/admin/attendance/count-percentage
+ */
+export async function countAdminAttendancePercentage(req, res, next) {
+  try {
+    const { department, year, division, subjectId, startDate, endDate } = req.body;
+
+    if (!department || !year || !division || !subjectId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Department, Year, Division and Subject are required to calculate percentage'
+      });
+    }
+
+    const subject = queryOne('SELECT id, name, code FROM subjects WHERE id = ? OR code = ?', [subjectId, subjectId]);
+    if (!subject) {
+      return res.status(404).json({ success: false, message: 'Subject not found' });
+    }
+
+    const students = queryAll(`
+      SELECT id, name, roll_number as rollNumber, email
+      FROM users
+      WHERE role = 'STUDENT' AND department = ? AND year = ? AND division = ? AND status = 'ACTIVE'
+      ORDER BY CAST(roll_number AS INTEGER) ASC, name ASC
+    `, [department, year, division]);
+
+    if (students.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: `No active students found in ${department} ${year}-${division}.`
+      });
+    }
+
+    let dateFilterQuery = 'WHERE department = ? AND year = ? AND division = ? AND subject_id = ?';
+    const dateParams = [department, year, division, subject.id];
+
+    if (startDate && endDate) {
+      dateFilterQuery += ' AND date >= ? AND date <= ?';
+      dateParams.push(startDate, endDate);
+    }
+
+    const conductedDates = queryAll(`
+      SELECT DISTINCT date 
+      FROM attendance_records 
+      ${dateFilterQuery}
+      ORDER BY date ASC
+    `, dateParams).map(r => r.date);
+
+    const totalConducted = conductedDates.length;
+    const calculatedList = [];
+    const defaulters = [];
+
+    for (const student of students) {
+      let recordParams = [student.id, subject.id];
+      let recQuery = 'WHERE student_id = ? AND subject_id = ?';
+      if (startDate && endDate) {
+        recQuery += ' AND date >= ? AND date <= ?';
+        recordParams.push(startDate, endDate);
+      }
+
+      const counts = queryOne(`
+        SELECT 
+          SUM(CASE WHEN status = 'PRESENT' THEN 1 ELSE 0 END) as presentCount,
+          SUM(CASE WHEN status = 'ABSENT' THEN 1 ELSE 0 END) as absentCount,
+          SUM(CASE WHEN status = 'LATE' THEN 1 ELSE 0 END) as lateCount
+        FROM attendance_records
+        ${recQuery}
+      `, recordParams);
+
+      const totalPresent = counts?.presentCount || 0;
+      const totalAbsent = counts?.absentCount || 0;
+      const totalLate = counts?.lateCount || 0;
+
+      let percentage = 0.0;
+      if (totalConducted > 0) {
+        percentage = parseFloat(((totalPresent / totalConducted) * 100).toFixed(1));
+      }
+
+      const isDefaulter = percentage < 30.0;
+
+      const existingSummary = queryOne(`
+        SELECT is_published FROM attendance_summaries
+        WHERE student_id = ? AND subject_id = ? AND department = ? AND year = ? AND division = ?
+      `, [student.id, subject.id, department, year, division]);
+
+      const isPublished = existingSummary ? existingSummary.is_published : 0;
+      const summaryId = `att_sum_${student.id}_${subject.id}`;
+
+      execute(`
+        INSERT INTO attendance_summaries (
+          id, student_id, subject_id, department, year, division,
+          start_date, end_date, total_conducted, total_present, total_absent, total_late,
+          attendance_percentage, is_defaulter, is_published, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(student_id, subject_id, department, year, division) DO UPDATE SET
+          start_date = excluded.start_date,
+          end_date = excluded.end_date,
+          total_conducted = excluded.total_conducted,
+          total_present = excluded.total_present,
+          total_absent = excluded.total_absent,
+          total_late = excluded.total_late,
+          attendance_percentage = excluded.attendance_percentage,
+          is_defaulter = excluded.is_defaulter,
+          updated_at = CURRENT_TIMESTAMP
+      `, [
+        summaryId,
+        student.id,
+        subject.id,
+        department,
+        year,
+        division,
+        startDate || (conductedDates[0] || null),
+        endDate || (conductedDates[conductedDates.length - 1] || null),
+        totalConducted,
+        totalPresent,
+        totalAbsent,
+        totalLate,
+        percentage,
+        isDefaulter ? 1 : 0,
+        isPublished
+      ]);
+
+      const item = {
+        studentId: student.id,
+        studentName: student.name,
+        rollNumber: student.rollNumber,
+        totalConducted,
+        totalPresent,
+        totalAbsent,
+        totalLate,
+        attendancePercentage: percentage,
+        isDefaulter,
+        status: isDefaulter ? 'DEFAULTER' : (percentage >= 75 ? 'Good' : 'Average')
+      };
+
+      calculatedList.push(item);
+      if (isDefaulter) {
+        defaulters.push({
+          ...item,
+          subjectName: subject.name,
+          subjectCode: subject.code,
+          message: 'Please complete your attendance.'
+        });
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Calculated attendance for ${calculatedList.length} students across ${totalConducted} conducted lectures.`,
+      subject,
+      cohort: { department, year, division },
+      totalStudents: calculatedList.length,
+      totalConducted,
+      defaultersCount: defaulters.length,
+      calculatedList,
+      defaulters
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Admin Publish Attendance (SEND TO STUDENT)
+ * POST /api/admin/attendance/publish
+ */
+export async function publishAdminAttendance(req, res, next) {
+  try {
+    const { department, year, division, subjectId, startDate, endDate } = req.body;
+
+    if (!department || !year || !division || !subjectId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Department, Year, Division and Subject are required to publish attendance'
+      });
+    }
+
+    const subject = queryOne('SELECT id, name, code FROM subjects WHERE id = ? OR code = ?', [subjectId, subjectId]);
+    if (!subject) {
+      return res.status(404).json({ success: false, message: 'Subject not found' });
+    }
+
+    execute(`
+      UPDATE attendance_summaries
+      SET is_published = 1, published_at = CURRENT_TIMESTAMP, published_by = ?
+      WHERE department = ? AND year = ? AND division = ? AND subject_id = ?
+    `, [req.user.id, department, year, division, subject.id]);
+
+    const targetedStudents = queryAll(`
+      SELECT id, name FROM users
+      WHERE role = 'STUDENT' AND department = ? AND year = ? AND division = ? AND status = 'ACTIVE'
+    `, [department, year, division]);
+
+    const notifInsert = `
+      INSERT INTO notifications (id, user_id, target_role, type, title, message, link, is_read, created_at)
+      VALUES (?, ?, 'STUDENT', 'ATTENDANCE_PUBLISHED', ?, ?, '/student/attendance', 0, CURRENT_TIMESTAMP)
+    `;
+
+    for (const student of targetedStudents) {
+      const notifId = `notif_att_${student.id}_${subject.id}_${Date.now()}`;
+      execute(notifInsert, [
+        notifId,
+        student.id,
+        `Attendance Published: ${subject.name} (${subject.code})`,
+        `Official attendance for ${subject.name} has been published by Administration. Click to inspect your record.`
+      ]);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Attendance for ${subject.name} (${subject.code}) has been published to ${targetedStudents.length} students in ${department} ${year}-${division}.`,
+      publishedCount: targetedStudents.length
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Admin Defaulters List
+ * GET /api/admin/attendance/defaulters
+ */
+export async function getAdminDefaultersList(req, res, next) {
+  try {
+    const { department, year, division, subjectId } = req.query;
+
+    let query = `
+      SELECT 
+        s.id, s.student_id as studentId, s.subject_id as subjectId, s.department, s.year, s.division,
+        s.total_conducted as totalConducted, s.total_present as totalPresent,
+        s.total_absent as totalAbsent, s.total_late as totalLate,
+        s.attendance_percentage as attendancePercentage, s.is_defaulter as isDefaulter,
+        s.is_published as isPublished, s.published_at as publishedAt,
+        u.name as studentName, u.roll_number as rollNumber, u.email as studentEmail,
+        sub.name as subjectName, sub.code as subjectCode
+      FROM attendance_summaries s
+      JOIN users u ON s.student_id = u.id
+      JOIN subjects sub ON s.subject_id = sub.id
+      WHERE (s.is_defaulter = 1 OR s.attendance_percentage < 30.0)
+    `;
+    const params = [];
+
+    if (department && department !== 'ALL') {
+      query += ' AND s.department = ?';
+      params.push(department);
+    }
+    if (year && year !== 'ALL') {
+      query += ' AND s.year = ?';
+      params.push(year);
+    }
+    if (division && division !== 'ALL') {
+      query += ' AND s.division = ?';
+      params.push(division);
+    }
+    if (subjectId && subjectId !== 'ALL') {
+      query += ' AND (s.subject_id = ? OR sub.code = ?)';
+      params.push(subjectId, subjectId);
+    }
+
+    query += ' ORDER BY s.attendance_percentage ASC, CAST(u.roll_number AS INTEGER) ASC';
+
+    const defaulters = queryAll(query, params).map(d => ({
+      ...d,
+      status: 'Defaulter',
+      alertMessage: 'Please complete your attendance.'
+    }));
+
+    res.status(200).json({
+      success: true,
+      defaulters,
+      count: defaulters.length
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Admin Attendance Overview Stats
+ * GET /api/admin/attendance/stats
+ */
+export async function getAdminAttendanceStats(req, res, next) {
+  try {
+    const totalSessions = queryOne('SELECT COUNT(DISTINCT date) as c FROM attendance_records')?.c || 0;
+    const avgAttendanceObj = queryOne('SELECT AVG(attendance_percentage) as a FROM attendance_summaries');
+    const avgAttendance = avgAttendanceObj && avgAttendanceObj.a != null ? parseFloat(avgAttendanceObj.a.toFixed(1)) : 85.0;
+    const totalDefaulters = queryOne('SELECT COUNT(*) as c FROM attendance_summaries WHERE is_defaulter = 1 OR attendance_percentage < 30.0')?.c || 0;
+    const publishedBatches = queryOne('SELECT COUNT(DISTINCT subject_id || department || year || division) as c FROM attendance_summaries WHERE is_published = 1')?.c || 0;
+
+    res.status(200).json({
+      success: true,
+      stats: {
+        totalConductedSessions: totalSessions,
+        averageCollegeAttendance: `${avgAttendance}%`,
+        totalDefaultersCount: totalDefaulters,
+        publishedBatchesCount: publishedBatches
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+
 

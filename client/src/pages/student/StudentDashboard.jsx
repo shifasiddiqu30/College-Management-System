@@ -48,6 +48,7 @@ import { useAuth } from '../../context/AuthContext';
 import StudentSidebar from '../../components/student/StudentSidebar';
 import StudentHeader from '../../components/student/StudentHeader';
 import DepartmentFolderTabs from '../../components/common/DepartmentFolderTabs';
+import StudentAttendanceView from '../../components/student/StudentAttendanceView';
 
 const LF_CATEGORIES = [
   'All Categories',
@@ -617,6 +618,8 @@ export default function StudentDashboard() {
   // Dynamic Header Meta
   const getHeaderMeta = () => {
     switch (activeTab) {
+      case 'attendance':
+        return { title: 'My Academic Attendance', subtitle: `Official attendance records for ${user?.department || 'Engineering'} • ${user?.year || 'SE'}-${user?.division || 'B'}` };
       case 'timetable':
         return { title: 'Smart Timetable', subtitle: `${user?.department || 'Engineering'} • ${user?.year || 'SE'}-${user?.division || 'B'} Official Schedule` };
       case 'clubs-events':
@@ -705,6 +708,11 @@ export default function StudentDashboard() {
 
         <main className="student-content">
           
+          {/* ================================================================ */}
+          {/* ATTENDANCE MODULE */}
+          {/* ================================================================ */}
+          {activeTab === 'attendance' && <StudentAttendanceView />}
+
           {/* ================================================================ */}
           {/* 1. DASHBOARD OVERVIEW HOME TAB */}
           {/* ================================================================ */}

@@ -33,7 +33,15 @@ import {
   deleteDepartment,
   toggleDepartmentStatus,
   getFacultyTimetableAdmin,
-  getFacultyAvailability
+  getFacultyAvailability,
+  
+  // Attendance Module
+  getAdminAttendanceSheet,
+  saveAdminDailyAttendance,
+  countAdminAttendancePercentage,
+  publishAdminAttendance,
+  getAdminDefaultersList,
+  getAdminAttendanceStats
 } from '../controllers/adminController.js';
 import { verifyToken } from '../middleware/authMiddleware.js';
 import { authorizeRoles } from '../middleware/roleMiddleware.js';
@@ -97,5 +105,14 @@ router.post('/notifications/broadcast', broadcastNotification);
 router.put('/notifications/:id/read', markAdminNotificationRead);
 router.put('/notifications/mark-all-read', markAllAdminNotificationsRead);
 
+// 10. Smart Attendance Module
+router.get('/attendance/stats', getAdminAttendanceStats);
+router.get('/attendance/sheet', getAdminAttendanceSheet);
+router.post('/attendance/save-daily', saveAdminDailyAttendance);
+router.post('/attendance/count-percentage', countAdminAttendancePercentage);
+router.post('/attendance/publish', publishAdminAttendance);
+router.get('/attendance/defaulters', getAdminDefaultersList);
+
 export default router;
+
 

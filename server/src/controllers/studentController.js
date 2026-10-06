@@ -1507,3 +1507,142 @@ export async function markAllStudentNotificationsRead(req, res, next) {
   }
 }
 
+// ============================================================================
+// 8. STUDENT ATTENDANCE MODULE (Strictly Scoped & Published Only)
+// ============================================================================
+
+/**
+ * Get Student's Own Attendance Records
+ * GET /api/student/attendance
+ * STRICT RULE: Only returns published attendance for req.user's cohort (Department + Year + Division)
+ */
+export async function getStudentAttendance(req, res, next) {
+  try {
+    const student = req.user;
+    const studentId = student.id;
+    const department = student.department;
+    const year = student.year;
+    const division = student.division;
+
+    // 1. Fetch all subjects for student's department
+    const subjects = queryAll(`
+      SELECT id, name, code, department, semester, credits
+      FROM subjects
+      WHERE department = ?
+      ORDER BY name ASC
+    `, [department]);
+
+    // 2. Fetch all published summaries for this student
+    const summaries = queryAll(`
+      SELECT 
+        s.id, s.subject_id as subjectId, s.department, s.year, s.division,
+        s.start_date as startDate, s.end_date as endDate,
+        s.total_conducted as totalConducted, s.total_present as totalPresent,
+        s.total_absent as totalAbsent, s.total_late as totalLate,
+        s.attendance_percentage as attendancePercentage, s.is_defaulter as isDefaulter,
+        s.is_published as isPublished, s.published_at as publishedAt,
+        u.name as publishedByName
+      FROM attendance_summaries s
+      LEFT JOIN users u ON s.published_by = u.id
+      WHERE s.student_id = ? AND s.department = ? AND s.year = ? AND s.division = ?
+    `, [studentId, department, year, division]);
+
+    const summaryMap = new Map();
+    summaries.forEach(sum => {
+      summaryMap.set(sum.subjectId, sum);
+    });
+
+    let totalPublishedPresent = 0;
+    let totalPublishedConducted = 0;
+    let publishedCount = 0;
+    let defaulterCount = 0;
+
+    const subjectRecords = subjects.map(sub => {
+      const summary = summaryMap.get(sub.id);
+      const isPublished = summary && (summary.isPublished === 1 || summary.isPublished === true);
+
+      if (isPublished) {
+        publishedCount++;
+        totalPublishedPresent += summary.totalPresent || 0;
+        totalPublishedConducted += summary.totalConducted || 0;
+
+        const isDefaulter = summary.isDefaulter === 1 || summary.attendancePercentage < 30.0;
+        if (isDefaulter) {
+          defaulterCount++;
+        }
+
+        return {
+          id: summary.id,
+          subjectId: sub.id,
+          subjectName: sub.name,
+          subjectCode: sub.code,
+          credits: sub.credits,
+          isPublished: true,
+          totalConducted: summary.totalConducted,
+          totalPresent: summary.totalPresent,
+          totalAbsent: summary.totalAbsent,
+          totalLate: summary.totalLate,
+          attendancePercentage: summary.attendancePercentage,
+          isDefaulter,
+          status: isDefaulter ? 'DEFAULTER' : (summary.attendancePercentage >= 75 ? 'Good Standing' : 'Average'),
+          alertMessage: isDefaulter ? 'Please complete your attendance.' : (summary.attendancePercentage >= 75 ? 'Meets attendance requirements' : 'Attendance is below 75% target'),
+          publishedAt: summary.publishedAt,
+          publishedByName: summary.publishedByName || 'Faculty Instructor',
+          startDate: summary.startDate,
+          endDate: summary.endDate
+        };
+      }
+
+      return {
+        id: null,
+        subjectId: sub.id,
+        subjectName: sub.name,
+        subjectCode: sub.code,
+        credits: sub.credits,
+        isPublished: false,
+        totalConducted: 0,
+        totalPresent: 0,
+        totalAbsent: 0,
+        totalLate: 0,
+        attendancePercentage: 0,
+        isDefaulter: false,
+        status: 'Not Published',
+        alertMessage: 'Attendance: Not Published',
+        publishedAt: null,
+        publishedByName: null
+      };
+    });
+
+    const averagePercentage = totalPublishedConducted > 0 
+      ? ((totalPublishedPresent / totalPublishedConducted) * 100).toFixed(1) 
+      : (publishedCount > 0 ? (subjectRecords.filter(s => s.isPublished).reduce((a, b) => a + b.attendancePercentage, 0) / publishedCount).toFixed(1) : 0);
+
+    res.status(200).json({
+      success: true,
+      student: {
+        id: student.id,
+        name: student.name,
+        rollNumber: student.roll_number || student.rollNumber,
+        department: student.department,
+        year: student.year,
+        division: student.division
+      },
+      summary: {
+        totalSubjects: subjects.length,
+        publishedSubjectsCount: publishedCount,
+        unpublishedSubjectsCount: subjects.length - publishedCount,
+        averageAttendance: `${averagePercentage}%`,
+        totalConducted: totalPublishedConducted,
+        totalPresent: totalPublishedPresent,
+        defaulterCount,
+        hasDefaulterAlert: defaulterCount > 0,
+        defaulterMessage: defaulterCount > 0 ? 'Please complete your attendance.' : null
+      },
+      records: subjectRecords
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+

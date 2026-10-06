@@ -13,6 +13,7 @@ import {
   GraduationCap,
   Package,
   CheckSquare,
+  ClipboardCheck,
   Flame,
   Search
 } from 'lucide-react';
@@ -23,6 +24,7 @@ export default function StudentSidebar({ activeTab, setActiveTab, isMobileOpen, 
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'attendance', label: 'My Attendance', icon: ClipboardCheck, badge: 'Live', badgeColor: 'bg-emerald-600' },
     { id: 'timetable', label: 'Smart Timetable', icon: Calendar },
     { id: 'clubs-events', label: 'Clubs & Events', icon: Users },
     { id: 'registrations', label: 'My Registrations', icon: CheckSquare },

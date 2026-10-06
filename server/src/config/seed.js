@@ -470,6 +470,121 @@ export async function seedDatabase() {
       status: USER_STATUS.SUSPENDED,
       assigned_subjects: null,
       assigned_classes: null
+    },
+    // Computer Engineering SE-B Cohort
+    {
+      id: 'usr_stu_soham_005',
+      name: 'Soham Deshmukh',
+      email: 'soham@college.edu',
+      password_hash: studentHash,
+      role: ROLES.STUDENT,
+      department: 'Computer Engineering',
+      year: 'SE',
+      division: 'B',
+      roll_number: '04',
+      status: USER_STATUS.ACTIVE,
+      assigned_subjects: null,
+      assigned_classes: null
+    },
+    {
+      id: 'usr_stu_aryan_006',
+      name: 'Aryan Kadam',
+      email: 'aryan@college.edu',
+      password_hash: studentHash,
+      role: ROLES.STUDENT,
+      department: 'Computer Engineering',
+      year: 'SE',
+      division: 'B',
+      roll_number: '15',
+      status: USER_STATUS.ACTIVE,
+      assigned_subjects: null,
+      assigned_classes: null
+    },
+    {
+      id: 'usr_stu_riya_007',
+      name: 'Riya Shah',
+      email: 'riya@college.edu',
+      password_hash: studentHash,
+      role: ROLES.STUDENT,
+      department: 'Computer Engineering',
+      year: 'SE',
+      division: 'B',
+      roll_number: '32',
+      status: USER_STATUS.ACTIVE,
+      assigned_subjects: null,
+      assigned_classes: null
+    },
+    {
+      id: 'usr_stu_tanvi_008',
+      name: 'Tanvi Sawant',
+      email: 'tanvi@college.edu',
+      password_hash: studentHash,
+      role: ROLES.STUDENT,
+      department: 'Computer Engineering',
+      year: 'SE',
+      division: 'B',
+      roll_number: '48',
+      status: USER_STATUS.ACTIVE,
+      assigned_subjects: null,
+      assigned_classes: null
+    },
+    // Computer Engineering SE-A Cohort
+    {
+      id: 'usr_stu_aditya_009',
+      name: 'Aditya Patil',
+      email: 'aditya@college.edu',
+      password_hash: studentHash,
+      role: ROLES.STUDENT,
+      department: 'Computer Engineering',
+      year: 'SE',
+      division: 'A',
+      roll_number: '01',
+      status: USER_STATUS.ACTIVE,
+      assigned_subjects: null,
+      assigned_classes: null
+    },
+    {
+      id: 'usr_stu_neha_010',
+      name: 'Neha Joshi',
+      email: 'neha@college.edu',
+      password_hash: studentHash,
+      role: ROLES.STUDENT,
+      department: 'Computer Engineering',
+      year: 'SE',
+      division: 'A',
+      roll_number: '18',
+      status: USER_STATUS.ACTIVE,
+      assigned_subjects: null,
+      assigned_classes: null
+    },
+    // AI&DS SE-B Cohort
+    {
+      id: 'usr_stu_rohan_011',
+      name: 'Rohan Gupta',
+      email: 'rohan@college.edu',
+      password_hash: studentHash,
+      role: ROLES.STUDENT,
+      department: 'Artificial Intelligence & Data Science',
+      year: 'SE',
+      division: 'B',
+      roll_number: '05',
+      status: USER_STATUS.ACTIVE,
+      assigned_subjects: null,
+      assigned_classes: null
+    },
+    {
+      id: 'usr_stu_sneha_012',
+      name: 'Sneha Kulkarni',
+      email: 'sneha@college.edu',
+      password_hash: studentHash,
+      role: ROLES.STUDENT,
+      department: 'Artificial Intelligence & Data Science',
+      year: 'SE',
+      division: 'B',
+      roll_number: '14',
+      status: USER_STATUS.ACTIVE,
+      assigned_subjects: null,
+      assigned_classes: null
     }
   ];
 
@@ -1324,6 +1439,82 @@ export async function seedDatabase() {
       lf.date, lf.photo_url, lf.status, lf.returned_at
     );
   }
+
+  // 10. Seed Attendance Records & Computed Summaries
+  const sampleDates = [
+    '2026-09-01', '2026-09-02', '2026-09-03', '2026-09-04', '2026-09-05',
+    '2026-09-08', '2026-09-09', '2026-09-10', '2026-09-11', '2026-09-12'
+  ];
+
+  const seBStudents = [
+    { id: 'usr_stu_shifa_001', name: 'Shifa Siddiqui', rollNumber: '23', presentIndices: [0, 1, 2, 3, 4, 5, 6, 7, 8] }, // 9/10 = 90%
+    { id: 'usr_stu_soham_005', name: 'Soham Deshmukh', rollNumber: '04', presentIndices: [0, 5] }, // 2/10 = 20% (<30% Defaulter)
+    { id: 'usr_stu_aryan_006', name: 'Aryan Kadam', rollNumber: '15', presentIndices: [0, 1, 2, 4, 5, 6, 8, 9] }, // 8/10 = 80%
+    { id: 'usr_stu_riya_007', name: 'Riya Shah', rollNumber: '32', presentIndices: [0, 1, 2, 3, 5, 6, 7, 8, 9] }, // 9/10 = 90%
+    { id: 'usr_stu_tanvi_008', name: 'Tanvi Sawant', rollNumber: '48', presentIndices: [1, 6] } // 2/10 = 20% (<30% Defaulter)
+  ];
+
+  const attRecStmt = db.prepare(`
+    INSERT OR REPLACE INTO attendance_records (
+      id, student_id, subject_id, department, year, division, date, status, marked_by, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+  `);
+
+  const attSumStmt = db.prepare(`
+    INSERT OR REPLACE INTO attendance_summaries (
+      id, student_id, subject_id, department, year, division,
+      start_date, end_date, total_conducted, total_present, total_absent, total_late,
+      attendance_percentage, is_defaulter, is_published, published_at, published_by, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+  `);
+
+  for (const st of seBStudents) {
+    let presentCount = 0;
+    let absentCount = 0;
+
+    for (let i = 0; i < sampleDates.length; i++) {
+      const d = sampleDates[i];
+      const isPres = st.presentIndices.includes(i);
+      const status = isPres ? 'PRESENT' : 'ABSENT';
+      if (isPres) presentCount++; else absentCount++;
+
+      attRecStmt.run(
+        `att_rec_${st.id}_sub_ce_coa_${d}`,
+        st.id,
+        'sub_ce_coa',
+        'Computer Engineering',
+        'SE',
+        'B',
+        d,
+        status,
+        'usr_fac_kgs_001'
+      );
+    }
+
+    const percentage = parseFloat(((presentCount / sampleDates.length) * 100).toFixed(1));
+    const isDefaulter = percentage < 30.0 ? 1 : 0;
+
+    attSumStmt.run(
+      `att_sum_${st.id}_sub_ce_coa`,
+      st.id,
+      'sub_ce_coa',
+      'Computer Engineering',
+      'SE',
+      'B',
+      sampleDates[0],
+      sampleDates[sampleDates.length - 1],
+      sampleDates.length,
+      presentCount,
+      absentCount,
+      0,
+      percentage,
+      isDefaulter,
+      1, // Published for COA
+      '2026-09-15 10:00:00',
+      'usr_fac_kgs_001'
+    );
+  }
+
 
   console.log('✅ [Seeder] Real college dataset (105 timetable lectures/labs) initialized successfully!');
   console.log('------------------------------------------------------------');

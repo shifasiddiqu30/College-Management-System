@@ -314,11 +314,47 @@ CREATE INDEX IF NOT EXISTS idx_acad_perf_class ON academic_performance(departmen
 CREATE TABLE IF NOT EXISTS attendance_records (
     id TEXT PRIMARY KEY,
     student_id TEXT NOT NULL REFERENCES users(id),
-    subject_id TEXT,
+    subject_id TEXT NOT NULL REFERENCES subjects(id),
+    department TEXT NOT NULL,
+    year TEXT NOT NULL,
+    division TEXT NOT NULL,
     date DATE NOT NULL,
-    status TEXT CHECK(status IN ('PRESENT', 'ABSENT', 'LATE')),
-    marked_by TEXT REFERENCES users(id)
+    status TEXT NOT NULL DEFAULT 'PRESENT' CHECK(status IN ('PRESENT', 'ABSENT', 'LATE')),
+    marked_by TEXT REFERENCES users(id),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(student_id, subject_id, date)
 );
+
+CREATE INDEX IF NOT EXISTS idx_att_rec_class_subj ON attendance_records(department, year, division, subject_id, date);
+CREATE INDEX IF NOT EXISTS idx_att_rec_student ON attendance_records(student_id);
+
+CREATE TABLE IF NOT EXISTS attendance_summaries (
+    id TEXT PRIMARY KEY,
+    student_id TEXT NOT NULL REFERENCES users(id),
+    subject_id TEXT NOT NULL REFERENCES subjects(id),
+    department TEXT NOT NULL,
+    year TEXT NOT NULL,
+    division TEXT NOT NULL,
+    start_date DATE,
+    end_date DATE,
+    total_conducted INTEGER NOT NULL DEFAULT 0,
+    total_present INTEGER NOT NULL DEFAULT 0,
+    total_absent INTEGER NOT NULL DEFAULT 0,
+    total_late INTEGER NOT NULL DEFAULT 0,
+    attendance_percentage REAL NOT NULL DEFAULT 0.0,
+    is_defaulter BOOLEAN NOT NULL DEFAULT 0,
+    is_published BOOLEAN NOT NULL DEFAULT 0,
+    published_at DATETIME,
+    published_by TEXT REFERENCES users(id),
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(student_id, subject_id, department, year, division)
+);
+
+CREATE INDEX IF NOT EXISTS idx_att_sum_class_subj ON attendance_summaries(department, year, division, subject_id);
+CREATE INDEX IF NOT EXISTS idx_att_sum_student ON attendance_summaries(student_id);
+CREATE INDEX IF NOT EXISTS idx_att_sum_defaulter ON attendance_summaries(is_defaulter);
+
 
 -- ============================================================================
 -- 7. NOTIFICATIONS & BROADCASTS

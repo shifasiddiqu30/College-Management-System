@@ -100,8 +100,19 @@ export function initDB() {
     addColumnIfMissing('notifications', 'is_read', "BOOLEAN DEFAULT 0");
     addColumnIfMissing('notifications', 'link', "TEXT");
 
+    // Attendance Records Migrations
+    addColumnIfMissing('attendance_records', 'department', "TEXT");
+    addColumnIfMissing('attendance_records', 'year', "TEXT");
+    addColumnIfMissing('attendance_records', 'division', "TEXT");
+    addColumnIfMissing('attendance_records', 'created_at', "DATETIME DEFAULT CURRENT_TIMESTAMP");
+    addColumnIfMissing('attendance_records', 'updated_at', "DATETIME DEFAULT CURRENT_TIMESTAMP");
+
     const schemaSql = fs.readFileSync(schemaPath, 'utf8');
     db.exec(schemaSql);
+    db.exec(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_att_rec_unique ON attendance_records(student_id, subject_id, date);
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_att_sum_unique ON attendance_summaries(student_id, subject_id, department, year, division);
+    `);
     console.log('✅ [Database] SQLite Schema loaded successfully.');
   } catch (error) {
     console.error('❌ [Database] Failed to initialize schema:', error.message);

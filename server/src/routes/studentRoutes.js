@@ -27,7 +27,8 @@ import {
   getReturnedHistory,
   getStudentNotifications,
   markStudentNotificationRead,
-  markAllStudentNotificationsRead
+  markAllStudentNotificationsRead,
+  getStudentAttendance
 } from '../controllers/studentController.js';
 import { verifyToken } from '../middleware/authMiddleware.js';
 import { authorizeRoles } from '../middleware/roleMiddleware.js';
@@ -47,10 +48,13 @@ router.get('/profile', getStudentProfile);
 router.get('/departments', getStudentDepartmentFolders);
 router.get('/timetable', getStudentTimetable);
 
-// 3. Academic Performance (Strict 1:1 privacy)
+// 3. Attendance Module (Strictly Scoped & Published Only)
+router.get('/attendance', getStudentAttendance);
+
+// 4. Academic Performance (Strict 1:1 privacy)
 router.get('/academic-performance', getStudentAcademicPerformance);
 
-// 4. Smart Doubt Discussion, Announcements & FAQs
+// 5. Smart Doubt Discussion, Announcements & FAQs
 router.get('/doubt-pages', getStudentDoubtPages);
 router.get('/doubts', getStudentDoubts);
 router.get('/doubts/:id', getStudentDoubtById);
@@ -63,13 +67,13 @@ router.put('/doubts/:id/request-faculty-help', requestFacultyHelp);
 router.get('/announcements', getStudentAnnouncements);
 router.get('/faqs', getStudentFaqs);
 
-// 5. Clubs & Events (Part 6)
+// 6. Clubs & Events (Part 6)
 router.get('/clubs-events', getStudentClubsEvents);
 router.post('/clubs/:id/register', registerClub);
 router.post('/events/:id/register', registerEvent);
 router.get('/registrations', getStudentRegistrations);
 
-// 6. Campus Lost & Found (Part 6)
+// 7. Campus Lost & Found (Part 6)
 router.get('/lost-found', getLostFoundItems);
 router.get('/lost-found/my-reports', getMyLostFoundReports);
 router.get('/lost-found/returned-history', getReturnedHistory);
@@ -79,7 +83,7 @@ router.put('/lost-found/:id', updateLostFoundReport);
 router.delete('/lost-found/:id', deleteLostFoundReport);
 router.put('/lost-found/:id/return', markLostFoundReturned);
 
-// 7. Notifications
+// 8. Notifications
 router.get('/notifications', getStudentNotifications);
 router.put('/notifications/:id/read', markStudentNotificationRead);
 router.put('/notifications/mark-all-read', markAllStudentNotificationsRead);

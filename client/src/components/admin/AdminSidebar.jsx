@@ -7,6 +7,7 @@ import {
   Building2,
   CalendarCheck,
   Calendar,
+  ClipboardCheck,
   Clock,
   Layers,
   Bell,
@@ -38,6 +39,7 @@ export default function AdminSidebar({ isMobileOpen, closeMobileSidebar }) {
   const scheduleNavItems = [
     { label: 'Student Timetable', path: '/admin/timetable', icon: CalendarCheck },
     { label: 'Faculty Timetable', path: '/admin/faculty-timetable', icon: Calendar },
+    { label: 'Attendance Register', path: '/admin/attendance', icon: ClipboardCheck, badge: 'Active' },
     { label: 'Classroom Availability', path: '/admin/classroom-availability', icon: Clock, badge: 'Live' },
     { label: 'Faculty Availability', path: '/admin/faculty-availability', icon: Users2, badge: 'Live' },
     { label: 'Notifications', path: '/admin/notifications', icon: Bell },

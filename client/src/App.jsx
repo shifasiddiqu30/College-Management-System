@@ -21,6 +21,7 @@ import ClassroomAvailability from './pages/admin/ClassroomAvailability';
 import FacultyAvailability from './pages/admin/FacultyAvailability';
 import TimetableManagement from './pages/admin/TimetableManagement';
 import FacultyTimetableManagement from './pages/admin/FacultyTimetableManagement';
+import AttendanceManagement from './pages/admin/AttendanceManagement';
 import AdminNotifications from './pages/admin/AdminNotifications';
 import AdminProfile from './pages/admin/AdminProfile';
 
@@ -56,9 +57,11 @@ export default function App() {
         <Route path="timetable" element={<TimetableManagement />} />
         <Route path="student-timetable" element={<TimetableManagement />} />
         <Route path="faculty-timetable" element={<FacultyTimetableManagement />} />
+        <Route path="attendance" element={<AttendanceManagement />} />
         <Route path="notifications" element={<AdminNotifications />} />
         <Route path="profile" element={<AdminProfile />} />
       </Route>
+
 
       {/* Protected Faculty Portal */}
       <Route

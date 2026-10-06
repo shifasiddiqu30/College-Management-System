@@ -47,6 +47,7 @@ import { useAuth } from '../../context/AuthContext';
 import FacultySidebar from '../../components/faculty/FacultySidebar';
 import FacultyHeader from '../../components/faculty/FacultyHeader';
 import DepartmentFolderTabs from '../../components/common/DepartmentFolderTabs';
+import FacultyAttendanceView from '../../components/faculty/FacultyAttendanceView';
 
 const LF_CATEGORIES = ['All Categories', 'Electronics', 'ID Cards & Documents', 'Books & Stationery', 'Accessories & Bags', 'Keys & Wallets', 'Clothing', 'Other'];
 
@@ -798,6 +799,8 @@ export default function FacultyDashboard() {
   // Dynamic Header Meta
   const getHeaderMeta = () => {
     switch (activeTab) {
+      case 'attendance':
+        return { title: 'Faculty Attendance Management', subtitle: 'Excel-style daily register, automated percentage engine & defaulter monitoring' };
       case 'timetable':
         return { title: 'Smart Timetable & Lecture Schedule', subtitle: 'Live lectures, weekly matrix & room allocations' };
       case 'clubs-events':
@@ -886,6 +889,11 @@ export default function FacultyDashboard() {
 
         <main className="faculty-content" style={{ animation: 'fadeIn 0.2s ease-in' }}>
           
+          {/* ================================================================ */}
+          {/* ATTENDANCE MODULE */}
+          {/* ================================================================ */}
+          {activeTab === 'attendance' && <FacultyAttendanceView />}
+
           {/* ================================================================ */}
           {/* 1. DASHBOARD OVERVIEW VIEW */}
           {/* ================================================================ */}

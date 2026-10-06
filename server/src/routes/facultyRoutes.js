@@ -59,7 +59,14 @@ import {
   createFacultyLostFound,
   updateFacultyLostFound,
   deleteFacultyLostFound,
-  markFacultyLostFoundReturned
+  markFacultyLostFoundReturned,
+
+  // Attendance Module
+  getAttendanceSheet,
+  saveDailyAttendance,
+  countAttendancePercentage,
+  publishAttendance,
+  getFacultyDefaultersList
 } from '../controllers/facultyController.js';
 import { verifyToken } from '../middleware/authMiddleware.js';
 import { authorizeRoles } from '../middleware/roleMiddleware.js';
@@ -135,5 +142,13 @@ router.put('/lost-found/:id', updateFacultyLostFound);
 router.delete('/lost-found/:id', deleteFacultyLostFound);
 router.put('/lost-found/:id/return', markFacultyLostFoundReturned);
 
+// 10. Smart Attendance Module
+router.get('/attendance/sheet', getAttendanceSheet);
+router.post('/attendance/save-daily', saveDailyAttendance);
+router.post('/attendance/count-percentage', countAttendancePercentage);
+router.post('/attendance/publish', publishAttendance);
+router.get('/attendance/defaulters', getFacultyDefaultersList);
+
 export default router;
+
 

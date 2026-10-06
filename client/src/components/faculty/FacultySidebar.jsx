@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   LayoutDashboard,
   Calendar,
@@ -8,6 +7,7 @@ import {
   Award,
   DoorOpen,
   CheckSquare,
+  ClipboardCheck,
   Bell,
   User,
   LogOut,
@@ -23,6 +23,7 @@ export default function FacultySidebar({ activeTab, setActiveTab, isMobileOpen, 
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'attendance', label: 'Attendance Sheet', icon: ClipboardCheck, badge: 'Live', badgeColor: 'bg-emerald-600' },
     { id: 'timetable', label: 'Smart Timetable', icon: Calendar },
     { id: 'clubs-events', label: 'Clubs & Events', icon: Users },
     { id: 'lost-found', label: 'Campus Lost & Found', icon: Award },
