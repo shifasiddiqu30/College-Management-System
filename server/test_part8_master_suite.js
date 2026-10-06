@@ -194,19 +194,19 @@ async function runMasterTestSuite() {
   assert(roomConflict.status === 400 && (roomConflict.body.conflictType === 'ROOM_CONFLICT' || roomConflict.body.conflictType === 'CLASSROOM_CONFLICT'), 'Classroom overlap conflict detected and blocked');
 
   // 3.4 Timetable Conflict 2: Faculty Overlap Conflict
-  // Dr. Sanjay Sharma is teaching Monday 10:15 - 11:15 in FF101
+  // Ms. Shaheen Khan (SJK) is teaching Monday 09:15 - 10:15
   const facultyConflict = await apiRequest('/api/admin/timetable', {
     method: 'POST',
     token: adminToken,
     body: {
       dayOfWeek: 'Monday',
-      startTime: '10:30',
-      endTime: '11:00',
+      startTime: '09:30',
+      endTime: '10:00',
       department: 'Information Technology',
       year: 'SE',
       division: 'A',
-      subjectId: 'sub_ds',
-      facultyId: facLogin.body.user.id, // Dr. Sanjay Sharma
+      subjectId: 'sub_ce_dsgt',
+      facultyId: 'usr_fac_sjk_001', // Ms. Shaheen Khan
       classroomId: 'crm_303' // Free room
     }
   });
