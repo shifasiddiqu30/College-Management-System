@@ -54,7 +54,7 @@ export default function FacultySidebar({ activeTab, setActiveTab, isMobileOpen, 
       <aside
         style={{
           width: '280px',
-          background: 'linear-gradient(180deg, #0d1322 0%, #080c16 100%)',
+          background: 'var(--bg-sidebar)',
           borderRight: '1px solid var(--border-subtle)',
           display: 'flex',
           flexDirection: 'column',
@@ -92,7 +92,7 @@ export default function FacultySidebar({ activeTab, setActiveTab, isMobileOpen, 
               <Sparkles size={20} color="#fff" />
             </div>
             <div>
-              <div style={{ fontWeight: 800, fontSize: '1.1rem', color: '#fff', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+              <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-heading)', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
                 Nexa<span style={{ color: 'var(--primary-light)' }}>Faculty</span>
               </div>
               <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -120,7 +120,7 @@ export default function FacultySidebar({ activeTab, setActiveTab, isMobileOpen, 
         </div>
 
         {/* Faculty Mini Card */}
-        <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border-subtle)', background: 'rgba(255, 255, 255, 0.02)' }}>
+        <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg-card-subtle)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <div
               style={{
@@ -139,7 +139,7 @@ export default function FacultySidebar({ activeTab, setActiveTab, isMobileOpen, 
               {user?.name ? user.name.charAt(0).toUpperCase() : 'F'}
             </div>
             <div style={{ overflow: 'hidden' }}>
-              <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#fff', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+              <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-heading)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
                 {user?.name || 'Faculty Professor'}
               </div>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
@@ -174,19 +174,19 @@ export default function FacultySidebar({ activeTab, setActiveTab, isMobileOpen, 
                   padding: '0.65rem 0.85rem',
                   borderRadius: '10px',
                   border: 'none',
-                  background: isActive ? 'linear-gradient(90deg, rgba(99, 102, 241, 0.2) 0%, rgba(168, 85, 247, 0.1) 100%)' : 'transparent',
-                  color: isActive ? '#fff' : 'var(--text-secondary)',
+                  background: isActive ? 'var(--bg-sidebar-active)' : 'transparent',
+                  color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
                   cursor: 'pointer',
                   fontWeight: isActive ? 600 : 500,
                   fontSize: '0.88rem',
                   transition: 'all 0.15s ease',
                   textAlign: 'left',
-                  borderLeft: isActive ? '3px solid var(--primary-light)' : '3px solid transparent'
+                  borderLeft: isActive ? '3px solid var(--primary)' : '3px solid transparent'
                 }}
                 onMouseEnter={(e) => {
                   if (!isActive) {
-                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
-                    e.currentTarget.style.color = '#fff';
+                    e.currentTarget.style.backgroundColor = 'var(--table-row-hover)';
+                    e.currentTarget.style.color = 'var(--text-heading)';
                   }
                 }}
                 onMouseLeave={(e) => {
@@ -197,7 +197,7 @@ export default function FacultySidebar({ activeTab, setActiveTab, isMobileOpen, 
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <Icon size={18} color={isActive ? 'var(--primary-light)' : 'currentColor'} />
+                  <Icon size={18} color={isActive ? 'var(--primary)' : 'currentColor'} />
                   <span>{item.label}</span>
                 </div>
                 {item.badge && (

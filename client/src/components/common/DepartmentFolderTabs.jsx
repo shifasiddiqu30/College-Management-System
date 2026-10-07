@@ -59,23 +59,24 @@ export default function DepartmentFolderTabs({
 
   return (
     <div style={{
-      background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.75), rgba(30, 41, 59, 0.5))',
-      border: '1px solid rgba(99, 102, 241, 0.2)',
+      background: 'var(--bg-card)',
+      border: '1px solid var(--border-subtle)',
       borderRadius: '18px',
       padding: '1.25rem 1.5rem',
       display: 'flex',
       flexDirection: 'column',
       gap: '1rem',
-      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
+      boxShadow: 'var(--shadow-sm)',
+      transition: 'background-color var(--transition-normal), border-color var(--transition-normal)'
     }}>
       {/* Section Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.78rem', fontWeight: 800, color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.78rem', fontWeight: 800, color: 'var(--primary-light)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
             <Folder size={15} />
             <span>{title}</span>
           </div>
-          {subtitle && <p style={{ fontSize: '0.82rem', color: '#94a3b8', marginTop: '0.15rem' }}>{subtitle}</p>}
+          {subtitle && <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>{subtitle}</p>}
         </div>
       </div>
 
@@ -97,9 +98,9 @@ export default function DepartmentFolderTabs({
               borderRadius: '12px',
               background: selectedDepartment === 'ALL'
                 ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(168, 85, 247, 0.25))'
-                : 'rgba(255, 255, 255, 0.04)',
-              border: `1px solid ${selectedDepartment === 'ALL' ? 'rgba(99, 102, 241, 0.6)' : 'rgba(255, 255, 255, 0.08)'}`,
-              color: '#fff',
+                : 'var(--bg-header-btn)',
+              border: `1px solid ${selectedDepartment === 'ALL' ? 'rgba(99, 102, 241, 0.6)' : 'var(--border-subtle)'}`,
+              color: selectedDepartment === 'ALL' ? '#fff' : 'var(--text-heading)',
               cursor: 'pointer',
               textAlign: 'left',
               transition: 'all 0.2s ease',
@@ -110,18 +111,18 @@ export default function DepartmentFolderTabs({
               width: '36px',
               height: '36px',
               borderRadius: '8px',
-              background: selectedDepartment === 'ALL' ? '#6366f1' : 'rgba(255, 255, 255, 0.08)',
+              background: selectedDepartment === 'ALL' ? '#6366f1' : 'var(--stat-icon-bg)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#fff',
+              color: selectedDepartment === 'ALL' ? '#fff' : 'var(--primary)',
               flexShrink: 0
             }}>
               {selectedDepartment === 'ALL' ? <FolderOpen size={18} /> : <Folder size={18} />}
             </div>
             <div>
-              <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#fff' }}>All Departments</div>
-              <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Campus Schedule Overview</div>
+              <div style={{ fontWeight: 700, fontSize: '0.9rem', color: selectedDepartment === 'ALL' ? '#fff' : 'var(--text-heading)' }}>All Departments</div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Campus Schedule Overview</div>
             </div>
           </button>
         )}
@@ -141,9 +142,9 @@ export default function DepartmentFolderTabs({
                 borderRadius: '12px',
                 background: isSelected
                   ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(168, 85, 247, 0.25))'
-                  : 'rgba(255, 255, 255, 0.04)',
-                border: `1px solid ${isSelected ? 'rgba(168, 85, 247, 0.6)' : 'rgba(255, 255, 255, 0.08)'}`,
-                color: '#fff',
+                  : 'var(--bg-header-btn)',
+                border: `1px solid ${isSelected ? 'rgba(168, 85, 247, 0.6)' : 'var(--border-subtle)'}`,
+                color: isSelected ? '#fff' : 'var(--text-heading)',
                 cursor: 'pointer',
                 textAlign: 'left',
                 transition: 'all 0.2s ease',
@@ -154,12 +155,12 @@ export default function DepartmentFolderTabs({
                 width: '36px',
                 height: '36px',
                 borderRadius: '8px',
-                background: isSelected ? 'linear-gradient(135deg, #a855f7, #6366f1)' : 'rgba(168, 85, 247, 0.12)',
+                background: isSelected ? 'linear-gradient(135deg, #a855f7, #6366f1)' : 'var(--stat-icon-bg)',
                 border: `1px solid ${isSelected ? 'rgba(168, 85, 247, 0.5)' : 'rgba(168, 85, 247, 0.2)'}`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: isSelected ? '#fff' : '#c084fc',
+                color: isSelected ? '#fff' : '#a855f7',
                 flexShrink: 0
               }}>
                 {isSelected ? <FolderOpen size={18} /> : <Folder size={18} />}
@@ -168,14 +169,14 @@ export default function DepartmentFolderTabs({
                 <div style={{
                   fontWeight: 700,
                   fontSize: '0.88rem',
-                  color: isSelected ? '#fff' : '#e2e8f0',
+                  color: isSelected ? '#fff' : 'var(--text-heading)',
                   whiteSpace: 'nowrap',
                   textOverflow: 'ellipsis',
                   overflow: 'hidden'
                 }}>
                   {dept.name}
                 </div>
-                <div style={{ fontSize: '0.72rem', color: isSelected ? '#c084fc' : '#94a3b8' }}>
+                <div style={{ fontSize: '0.72rem', color: isSelected ? '#c084fc' : 'var(--text-muted)' }}>
                   {dept.code ? `[${dept.code}] ` : ''}Weekly Timetable
                 </div>
               </div>

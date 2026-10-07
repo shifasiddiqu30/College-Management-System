@@ -39,7 +39,7 @@ export default function ConfirmModal({
         </div>
 
         <div className="modal-body" style={{ padding: '1.25rem 1.5rem' }}>
-          <p style={{ fontSize: '0.9rem', color: '#cbd5e1', lineHeight: '1.5' }}>
+          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
             {message}
           </p>
         </div>

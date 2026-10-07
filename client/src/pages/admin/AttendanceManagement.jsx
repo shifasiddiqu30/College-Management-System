@@ -469,14 +469,14 @@ export default function AttendanceManagement() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
             {/* Year Selector */}
             <div>
-              <label style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>
+              <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>
                 ACADEMIC YEAR
               </label>
               <select
                 className="form-control"
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(e.target.value)}
-                style={{ padding: '0.45rem 0.75rem', background: '#1e293b', color: '#fff', border: '1px solid #334155', borderRadius: '8px', fontSize: '0.85rem' }}
+                style={{ padding: '0.45rem 0.75rem', background: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border-subtle)', borderRadius: '8px', fontSize: '0.85rem' }}
               >
                 <option value="SE">Second Year (SE)</option>
                 <option value="TE">Third Year (TE)</option>
@@ -487,14 +487,14 @@ export default function AttendanceManagement() {
 
             {/* Division Selector */}
             <div>
-              <label style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>
+              <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>
                 DIVISION / CLASS
               </label>
               <select
                 className="form-control"
                 value={selectedDivision}
                 onChange={(e) => setSelectedDivision(e.target.value)}
-                style={{ padding: '0.45rem 0.75rem', background: '#1e293b', color: '#fff', border: '1px solid #334155', borderRadius: '8px', fontSize: '0.85rem' }}
+                style={{ padding: '0.45rem 0.75rem', background: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border-subtle)', borderRadius: '8px', fontSize: '0.85rem' }}
               >
                 <option value="A">Division A</option>
                 <option value="B">Division B</option>
@@ -504,14 +504,14 @@ export default function AttendanceManagement() {
 
             {/* Subject Selector */}
             <div>
-              <label style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>
+              <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>
                 SUBJECT / COURSE
               </label>
               <select
                 className="form-control"
                 value={selectedSubjectId}
                 onChange={(e) => setSelectedSubjectId(e.target.value)}
-                style={{ padding: '0.45rem 0.75rem', background: '#1e293b', color: '#fff', border: '1px solid #334155', borderRadius: '8px', fontSize: '0.85rem', minWidth: '220px' }}
+                style={{ padding: '0.45rem 0.75rem', background: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border-subtle)', borderRadius: '8px', fontSize: '0.85rem', minWidth: '220px' }}
               >
                 {filteredSubjects.map(sub => (
                   <option key={sub.id} value={sub.id}>
@@ -523,7 +523,7 @@ export default function AttendanceManagement() {
 
             {/* Date Selector for New Session */}
             <div>
-              <label style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>
+              <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem', fontWeight: 600 }}>
                 LECTURE DATE
               </label>
               <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
@@ -532,7 +532,7 @@ export default function AttendanceManagement() {
                   className="form-control"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  style={{ padding: '0.45rem 0.6rem', background: '#1e293b', color: '#fff', border: '1px solid #334155', borderRadius: '8px', fontSize: '0.85rem' }}
+                  style={{ padding: '0.45rem 0.6rem', background: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border-subtle)', borderRadius: '8px', fontSize: '0.85rem' }}
                 />
                 <button
                   className="btn btn-secondary btn-sm"
@@ -700,7 +700,7 @@ export default function AttendanceManagement() {
 
       {/* TAB 1: ATTENDANCE REGISTER */}
       {activeTab === 'sheet' && (
-        <div className="card" style={{ padding: '1.25rem', background: 'rgba(15, 23, 42, 0.75)', border: '1px solid var(--border-subtle)', borderRadius: '16px' }}>
+        <div className="card" style={{ padding: '1.25rem', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: '16px' }}>
           {/* Quick Toolbar for Attendance Register */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>

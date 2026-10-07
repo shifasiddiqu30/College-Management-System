@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Bell, Menu, ShieldCheck, CheckCircle2, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import ThemeToggle from '../common/ThemeToggle';
 
 export default function AdminHeader({ title = 'Dashboard Overview', subtitle = 'College Operations & Administration', toggleMobileSidebar }) {
   const { user, authFetch } = useAuth();
@@ -94,6 +95,9 @@ export default function AdminHeader({ title = 'Dashboard Overview', subtitle = '
           />
         </form>
 
+        {/* Theme Toggle Button */}
+        <ThemeToggle />
+
         {/* Notifications Popover */}
         <div style={{ position: 'relative' }}>
           <button
@@ -136,7 +140,7 @@ export default function AdminHeader({ title = 'Dashboard Overview', subtitle = '
                 top: '50px',
                 right: 0,
                 width: '350px',
-                background: '#0f172a',
+                background: 'var(--bg-modal)',
                 border: '1px solid var(--border-subtle)',
                 borderRadius: 'var(--radius-md)',
                 boxShadow: 'var(--shadow-lg)',
@@ -146,7 +150,7 @@ export default function AdminHeader({ title = 'Dashboard Overview', subtitle = '
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-subtle)' }}>
-                <span style={{ fontWeight: 700, fontSize: '0.88rem', color: '#fff' }}>
+                <span style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-heading)' }}>
                   Admin Notifications {unreadCount > 0 && `(${unreadCount})`}
                 </span>
                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
@@ -179,14 +183,14 @@ export default function AdminHeader({ title = 'Dashboard Overview', subtitle = '
                       style={{
                         padding: '0.6rem 0.75rem',
                         borderRadius: 'var(--radius-sm)',
-                        background: !n.isRead ? 'rgba(99, 102, 241, 0.12)' : 'rgba(255, 255, 255, 0.02)',
+                        background: !n.isRead ? 'rgba(99, 102, 241, 0.12)' : 'var(--table-row-hover)',
                         border: '1px solid var(--border-subtle)',
                         cursor: 'pointer',
                         transition: 'all 0.15s ease'
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#fff' }}>{n.title}</span>
+                        <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-heading)' }}>{n.title}</span>
                         <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
                           {n.createdAt ? new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                         </span>
@@ -202,7 +206,7 @@ export default function AdminHeader({ title = 'Dashboard Overview', subtitle = '
               <div style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border-subtle)', textAlign: 'center' }}>
                 <button
                   className="btn-text"
-                  style={{ fontSize: '0.78rem', color: 'var(--primary-light)', padding: '0.2rem' }}
+                  style={{ fontSize: '0.78rem', color: 'var(--primary-light)', padding: '0.2rem', background: 'none', border: 'none', cursor: 'pointer' }}
                   onClick={() => {
                     setShowNotifications(false);
                     navigate('/admin/notifications');
@@ -224,7 +228,7 @@ export default function AdminHeader({ title = 'Dashboard Overview', subtitle = '
             gap: '0.65rem',
             padding: '0.4rem 0.75rem',
             borderRadius: 'var(--radius-full)',
-            background: 'rgba(255, 255, 255, 0.04)',
+            background: 'var(--bg-header-btn)',
             border: '1px solid var(--border-subtle)',
             cursor: 'pointer',
             transition: 'all 0.2s ease'
@@ -246,7 +250,7 @@ export default function AdminHeader({ title = 'Dashboard Overview', subtitle = '
           >
             <ShieldCheck size={16} />
           </div>
-          <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#fff' }}>{user?.name || 'Administrator'}</span>
+          <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-heading)' }}>{user?.name || 'Administrator'}</span>
         </div>
       </div>
 

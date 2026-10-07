@@ -17,10 +17,13 @@ import {
   Cpu
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import ThemeToggle from '../components/common/ThemeToggle';
 
 export default function LandingPage() {
   const navigate = useNavigate();
   const { user, login } = useAuth();
+  const { isDark } = useTheme();
 
   const handleQuickLogin = async (email, password) => {
     try {
@@ -45,42 +48,60 @@ export default function LandingPage() {
   ];
 
   return (
-    <div style={{ minHeight: '100vh', background: 'radial-gradient(ellipse at top, #131d33 0%, #090d16 70%)', color: '#fff' }}>
+    <div
+      style={{
+        minHeight: '100vh',
+        background: isDark
+          ? 'radial-gradient(ellipse at top, #131d33 0%, #090d16 70%)'
+          : 'radial-gradient(ellipse at top, #eef2ff 0%, #f8fafc 70%)',
+        color: isDark ? '#fff' : '#0f172a',
+        transition: 'background 0.3s ease, color 0.3s ease'
+      }}
+    >
       {/* Top Navbar */}
-      <header style={{
-        padding: '1.25rem 2.5rem',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-        backdropFilter: 'blur(12px)',
-        position: 'sticky',
-        top: 0,
-        zIndex: 50,
-        background: 'rgba(9, 13, 22, 0.85)'
-      }}>
+      <header
+        style={{
+          padding: '1.25rem 2.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderBottom: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
+          backdropFilter: 'blur(12px)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 50,
+          background: isDark ? 'rgba(9, 13, 22, 0.85)' : 'rgba(255, 255, 255, 0.88)'
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{
-            width: '42px',
-            height: '42px',
-            borderRadius: '12px',
-            background: 'linear-gradient(135deg, #6366f1, #a855f7)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 0 20px rgba(99, 102, 241, 0.4)'
-          }}>
+          <div
+            style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 0 20px rgba(99, 102, 241, 0.4)'
+            }}
+          >
             <Sparkles size={22} color="#fff" />
           </div>
           <div>
-            <h1 style={{ fontSize: '1.3rem', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>AcademiaX</h1>
-            <span style={{ fontSize: '0.7rem', color: '#818cf8', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            <h1 style={{ fontSize: '1.3rem', fontWeight: 800, letterSpacing: '-0.02em', margin: 0, color: isDark ? '#fff' : '#0f172a' }}>
+              AcademiaX
+            </h1>
+            <span style={{ fontSize: '0.7rem', color: isDark ? '#818cf8' : '#4f46e5', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               College Operating System
             </span>
           </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          {/* Theme Toggle Button */}
+          <ThemeToggle />
+
           {user ? (
             <button
               className="btn btn-primary"
@@ -104,98 +125,124 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <section style={{ padding: '5rem 2rem 3rem', maxWidth: '1200px', margin: '0 auto', textAlign: 'center' }}>
-        <div style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          padding: '0.4rem 1rem',
-          borderRadius: '9999px',
-          background: 'rgba(99, 102, 241, 0.12)',
-          border: '1px solid rgba(99, 102, 241, 0.3)',
-          color: '#818cf8',
-          fontSize: '0.85rem',
-          fontWeight: 600,
-          marginBottom: '1.5rem'
-        }}>
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.4rem 1rem',
+            borderRadius: '9999px',
+            background: isDark ? 'rgba(99, 102, 241, 0.12)' : 'rgba(99, 102, 241, 0.08)',
+            border: isDark ? '1px solid rgba(99, 102, 241, 0.3)' : '1px solid rgba(99, 102, 241, 0.25)',
+            color: isDark ? '#818cf8' : '#4f46e5',
+            fontSize: '0.85rem',
+            fontWeight: 600,
+            marginBottom: '1.5rem'
+          }}
+        >
           <Sparkles size={16} />
           <span>Part 2: Admin Dashboard & Unified Management Live</span>
         </div>
 
-        <h1 style={{
-          fontSize: 'clamp(2.5rem, 5vw, 4.2rem)',
-          fontWeight: 800,
-          lineHeight: 1.15,
-          letterSpacing: '-0.03em',
-          maxWidth: '900px',
-          margin: '0 auto 1.5rem',
-          background: 'linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent'
-        }}>
-          Intelligent Campus Management <br />
-          <span style={{
-            background: 'linear-gradient(135deg, #818cf8 0%, #06b6d4 100%)',
+        <h1
+          style={{
+            fontSize: 'clamp(2.5rem, 5vw, 4.2rem)',
+            fontWeight: 800,
+            lineHeight: 1.15,
+            letterSpacing: '-0.03em',
+            maxWidth: '900px',
+            margin: '0 auto 1.5rem',
+            background: isDark
+              ? 'linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%)'
+              : 'linear-gradient(180deg, #0f172a 0%, #334155 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent'
-          }}>
+          }}
+        >
+          Intelligent Campus Management <br />
+          <span
+            style={{
+              background: 'linear-gradient(135deg, #6366f1 0%, #06b6d4 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent'
+            }}
+          >
             Built For Higher Education
           </span>
         </h1>
 
-        <p style={{
-          fontSize: 'clamp(1rem, 2vw, 1.25rem)',
-          color: '#94a3b8',
-          maxWidth: '720px',
-          margin: '0 auto 2.5rem',
-          lineHeight: 1.6
-        }}>
+        <p
+          style={{
+            fontSize: 'clamp(1rem, 2vw, 1.25rem)',
+            color: isDark ? '#94a3b8' : '#475569',
+            maxWidth: '720px',
+            margin: '0 auto 2.5rem',
+            lineHeight: 1.6
+          }}
+        >
           A unified, high-performance platform managing student enrollments, faculty workloads, classroom availability matrices, and real-time operations with strict RBAC security.
         </p>
 
         {/* Demo Credentials Quick-Login Box */}
-        <div style={{
-          background: 'rgba(15, 23, 42, 0.75)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          borderRadius: '20px',
-          padding: '2rem',
-          maxWidth: '960px',
-          margin: '0 auto 4rem',
-          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)',
-          backdropFilter: 'blur(16px)'
-        }}>
+        <div
+          style={{
+            background: isDark ? 'rgba(15, 23, 42, 0.75)' : '#ffffff',
+            border: isDark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #e2e8f0',
+            borderRadius: '20px',
+            padding: '2rem',
+            maxWidth: '960px',
+            margin: '0 auto 4rem',
+            boxShadow: isDark ? '0 20px 50px rgba(0, 0, 0, 0.5)' : '0 20px 50px rgba(15, 23, 42, 0.08)',
+            backdropFilter: 'blur(16px)'
+          }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
-            <Lock size={18} color="#818cf8" />
-            <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#f8fafc' }}>
+            <Lock size={18} color="#6366f1" />
+            <span style={{ fontSize: '0.95rem', fontWeight: 700, color: isDark ? '#f8fafc' : '#0f172a' }}>
               One-Click Viva & Evaluation Logins
             </span>
           </div>
 
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-            gap: '1.25rem',
-            textAlign: 'left'
-          }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+              gap: '1.25rem',
+              textAlign: 'left'
+            }}
+          >
             {/* Admin Box */}
-            <div style={{
-              background: 'rgba(99, 102, 241, 0.08)',
-              border: '1px solid rgba(99, 102, 241, 0.25)',
-              borderRadius: '14px',
-              padding: '1.25rem',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between'
-            }}>
+            <div
+              style={{
+                background: isDark ? 'rgba(99, 102, 241, 0.08)' : '#f8fafc',
+                border: isDark ? '1px solid rgba(99, 102, 241, 0.25)' : '1px solid #e2e8f0',
+                borderRadius: '14px',
+                padding: '1.25rem',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between'
+              }}
+            >
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#818cf8', background: 'rgba(99, 102, 241, 0.2)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
+                  <span
+                    style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      color: '#6366f1',
+                      background: 'rgba(99, 102, 241, 0.15)',
+                      padding: '0.2rem 0.5rem',
+                      borderRadius: '4px'
+                    }}
+                  >
                     Admin Role
                   </span>
-                  <ShieldCheck size={18} color="#818cf8" />
+                  <ShieldCheck size={18} color="#6366f1" />
                 </div>
-                <div style={{ fontWeight: 700, fontSize: '1rem', color: '#fff' }}>Dr. Eleanor Vance</div>
-                <div style={{ fontSize: '0.8rem', color: '#94a3b8', fontFamily: 'monospace' }}>admin@college.edu</div>
-                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>Password: Admin@123</div>
+                <div style={{ fontWeight: 700, fontSize: '1rem', color: isDark ? '#fff' : '#0f172a' }}>Dr. Eleanor Vance</div>
+                <div style={{ fontSize: '0.8rem', color: isDark ? '#94a3b8' : '#64748b', fontFamily: 'monospace' }}>admin@college.edu</div>
+                <div style={{ fontSize: '0.75rem', color: isDark ? '#64748b' : '#94a3b8', marginTop: '0.25rem' }}>Password: Admin@123</div>
               </div>
               <button
                 className="btn btn-primary"
@@ -207,25 +254,37 @@ export default function LandingPage() {
             </div>
 
             {/* Faculty Box */}
-            <div style={{
-              background: 'rgba(6, 182, 212, 0.08)',
-              border: '1px solid rgba(6, 182, 212, 0.25)',
-              borderRadius: '14px',
-              padding: '1.25rem',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between'
-            }}>
+            <div
+              style={{
+                background: isDark ? 'rgba(6, 182, 212, 0.08)' : '#f8fafc',
+                border: isDark ? '1px solid rgba(6, 182, 212, 0.25)' : '1px solid #e2e8f0',
+                borderRadius: '14px',
+                padding: '1.25rem',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between'
+              }}
+            >
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#06b6d4', background: 'rgba(6, 182, 212, 0.2)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
+                  <span
+                    style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      color: '#0891b2',
+                      background: 'rgba(6, 182, 212, 0.15)',
+                      padding: '0.2rem 0.5rem',
+                      borderRadius: '4px'
+                    }}
+                  >
                     Faculty Role
                   </span>
-                  <Users2 size={18} color="#06b6d4" />
+                  <Users2 size={18} color="#0891b2" />
                 </div>
-                <div style={{ fontWeight: 700, fontSize: '1rem', color: '#fff' }}>Sharma Ma'am</div>
-                <div style={{ fontSize: '0.8rem', color: '#94a3b8', fontFamily: 'monospace' }}>sharma@college.edu</div>
-                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>Password: Faculty@123</div>
+                <div style={{ fontWeight: 700, fontSize: '1rem', color: isDark ? '#fff' : '#0f172a' }}>Sharma Ma'am</div>
+                <div style={{ fontSize: '0.8rem', color: isDark ? '#94a3b8' : '#64748b', fontFamily: 'monospace' }}>sharma@college.edu</div>
+                <div style={{ fontSize: '0.75rem', color: isDark ? '#64748b' : '#94a3b8', marginTop: '0.25rem' }}>Password: Faculty@123</div>
               </div>
               <button
                 className="btn btn-secondary"
@@ -237,25 +296,37 @@ export default function LandingPage() {
             </div>
 
             {/* Student Box */}
-            <div style={{
-              background: 'rgba(16, 185, 129, 0.08)',
-              border: '1px solid rgba(16, 185, 129, 0.25)',
-              borderRadius: '14px',
-              padding: '1.25rem',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between'
-            }}>
+            <div
+              style={{
+                background: isDark ? 'rgba(16, 185, 129, 0.08)' : '#f8fafc',
+                border: isDark ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid #e2e8f0',
+                borderRadius: '14px',
+                padding: '1.25rem',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between'
+              }}
+            >
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: '#10b981', background: 'rgba(16, 185, 129, 0.2)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
+                  <span
+                    style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      color: '#059669',
+                      background: 'rgba(16, 185, 129, 0.15)',
+                      padding: '0.2rem 0.5rem',
+                      borderRadius: '4px'
+                    }}
+                  >
                     Student Role
                   </span>
-                  <GraduationCap size={18} color="#10b981" />
+                  <GraduationCap size={18} color="#059669" />
                 </div>
-                <div style={{ fontWeight: 700, fontSize: '1rem', color: '#fff' }}>Shifa Siddiqui</div>
-                <div style={{ fontSize: '0.8rem', color: '#94a3b8', fontFamily: 'monospace' }}>student@college.edu</div>
-                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>Password: Student@123 (Roll: 23)</div>
+                <div style={{ fontWeight: 700, fontSize: '1rem', color: isDark ? '#fff' : '#0f172a' }}>Shifa Siddiqui</div>
+                <div style={{ fontSize: '0.8rem', color: isDark ? '#94a3b8' : '#64748b', fontFamily: 'monospace' }}>student@college.edu</div>
+                <div style={{ fontSize: '0.75rem', color: isDark ? '#64748b' : '#94a3b8', marginTop: '0.25rem' }}>Password: Student@123 (Roll: 23)</div>
               </div>
               <button
                 className="btn btn-secondary"
@@ -272,61 +343,76 @@ export default function LandingPage() {
       {/* Modules Roadmap Grid */}
       <section style={{ padding: '3rem 2rem 5rem', maxWidth: '1200px', margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-          <h2 style={{ fontSize: '2rem', fontWeight: 800, color: '#fff', marginBottom: '0.5rem' }}>
+          <h2 style={{ fontSize: '2rem', fontWeight: 800, color: isDark ? '#fff' : '#0f172a', marginBottom: '0.5rem' }}>
             Comprehensive 8-Part Architecture
           </h2>
-          <p style={{ color: '#94a3b8' }}>
+          <p style={{ color: isDark ? '#94a3b8' : '#64748b' }}>
             Built modularly according to academic specification standards
           </p>
         </div>
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-          gap: '1.25rem'
-        }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+            gap: '1.25rem'
+          }}
+        >
           {modules.map((m) => (
             <div
               key={m.number}
               style={{
-                background: 'rgba(17, 24, 39, 0.7)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
+                background: isDark ? 'rgba(17, 24, 39, 0.7)' : '#ffffff',
+                border: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
                 borderRadius: '16px',
                 padding: '1.5rem',
                 position: 'relative',
-                transition: 'all 0.25s ease'
+                transition: 'all 0.25s ease',
+                boxShadow: isDark ? 'none' : '0 4px 16px rgba(15, 23, 42, 0.04)'
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'rgba(255, 255, 255, 0.2)', fontFamily: 'monospace' }}>
+                <span style={{ fontSize: '1.25rem', fontWeight: 800, color: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(15, 23, 42, 0.18)', fontFamily: 'monospace' }}>
                   {m.number}
                 </span>
-                <span style={{
-                  fontSize: '0.7rem',
-                  fontWeight: 700,
-                  padding: '0.2rem 0.6rem',
-                  borderRadius: '9999px',
-                  background: m.status.includes('Active') ? 'rgba(99, 102, 241, 0.2)' : m.status.includes('Completed') ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                  color: m.status.includes('Active') ? '#818cf8' : m.status.includes('Completed') ? '#10b981' : '#94a3b8'
-                }}>
+                <span
+                  style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    padding: '0.2rem 0.6rem',
+                    borderRadius: '9999px',
+                    background: m.status.includes('Active')
+                      ? 'rgba(99, 102, 241, 0.15)'
+                      : m.status.includes('Completed')
+                      ? 'rgba(16, 185, 129, 0.15)'
+                      : isDark ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9',
+                    color: m.status.includes('Active')
+                      ? '#6366f1'
+                      : m.status.includes('Completed')
+                      ? '#059669'
+                      : isDark ? '#94a3b8' : '#64748b'
+                  }}
+                >
                   {m.status}
                 </span>
               </div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff', marginBottom: '0.5rem' }}>{m.title}</h3>
-              <p style={{ fontSize: '0.85rem', color: '#94a3b8', lineHeight: 1.5 }}>{m.desc}</p>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: isDark ? '#fff' : '#0f172a', marginBottom: '0.5rem' }}>{m.title}</h3>
+              <p style={{ fontSize: '0.85rem', color: isDark ? '#94a3b8' : '#64748b', lineHeight: 1.5 }}>{m.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* Footer */}
-      <footer style={{
-        borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-        padding: '2.5rem 2rem',
-        textAlign: 'center',
-        color: '#64748b',
-        fontSize: '0.85rem'
-      }}>
+      <footer
+        style={{
+          borderTop: isDark ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid #e2e8f0',
+          padding: '2.5rem 2rem',
+          textAlign: 'center',
+          color: isDark ? '#64748b' : '#64748b',
+          fontSize: '0.85rem'
+        }}
+      >
         <p>© 2026 AcademiaX — College Management System. All rights reserved.</p>
         <p style={{ marginTop: '0.35rem', fontSize: '0.78rem' }}>
           Role-Based Access Control Architecture • SQLite WAL Engine • React & Express API

@@ -13,6 +13,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import ThemeToggle from '../common/ThemeToggle';
 
 export default function FacultyHeader({ title, subtitle, toggleMobileSidebar, unreadCount = 0, notifications = [], setActiveTab }) {
   const { user } = useAuth();
@@ -22,7 +23,7 @@ export default function FacultyHeader({ title, subtitle, toggleMobileSidebar, un
     <header
       style={{
         height: '76px',
-        background: 'rgba(13, 19, 34, 0.85)',
+        background: 'var(--bg-header)',
         backdropFilter: 'blur(16px)',
         borderBottom: '1px solid var(--border-subtle)',
         display: 'flex',
@@ -42,7 +43,7 @@ export default function FacultyHeader({ title, subtitle, toggleMobileSidebar, un
             display: 'none',
             background: 'var(--bg-input)',
             border: '1px solid var(--border-subtle)',
-            color: '#fff',
+            color: 'var(--text-primary)',
             padding: '0.5rem',
             borderRadius: '8px',
             cursor: 'pointer'
@@ -53,7 +54,7 @@ export default function FacultyHeader({ title, subtitle, toggleMobileSidebar, un
         </button>
 
         <div>
-          <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>
+          <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-heading)', lineHeight: 1.2 }}>
             {title}
           </h1>
           {subtitle && (
@@ -64,8 +65,11 @@ export default function FacultyHeader({ title, subtitle, toggleMobileSidebar, un
         </div>
       </div>
 
-      {/* Right Actions: Notifications & Profile */}
+      {/* Right Actions: Theme, Notifications & Profile */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        {/* Theme Toggle Button */}
+        <ThemeToggle />
+
         {/* Notification Bell */}
         <div style={{ position: 'relative' }}>
           <button
@@ -74,12 +78,12 @@ export default function FacultyHeader({ title, subtitle, toggleMobileSidebar, un
               width: '40px',
               height: '40px',
               borderRadius: '10px',
-              background: isNotifDropdownOpen ? 'rgba(99, 102, 241, 0.2)' : 'var(--bg-input)',
+              background: isNotifDropdownOpen ? 'rgba(99, 102, 241, 0.2)' : 'var(--bg-header-btn)',
               border: `1px solid ${isNotifDropdownOpen ? 'var(--primary)' : 'var(--border-subtle)'}`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#fff',
+              color: 'var(--text-primary)',
               cursor: 'pointer',
               position: 'relative',
               transition: 'all 0.2s ease'
@@ -118,10 +122,10 @@ export default function FacultyHeader({ title, subtitle, toggleMobileSidebar, un
                 top: '50px',
                 right: 0,
                 width: '340px',
-                backgroundColor: '#0f172a',
+                backgroundColor: 'var(--bg-modal)',
                 border: '1px solid var(--border-subtle)',
                 borderRadius: '14px',
-                boxShadow: '0 20px 40px rgba(0, 0, 0, 0.6)',
+                boxShadow: 'var(--shadow-lg)',
                 zIndex: 200,
                 overflow: 'hidden',
                 animation: 'slideUp 0.2s ease-out'
@@ -134,10 +138,10 @@ export default function FacultyHeader({ title, subtitle, toggleMobileSidebar, un
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  background: 'rgba(255, 255, 255, 0.02)'
+                  background: 'var(--table-th-bg)'
                 }}
               >
-                <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#fff' }}>
+                <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-heading)' }}>
                   Notifications ({unreadCount} unread)
                 </div>
                 <button
@@ -173,14 +177,14 @@ export default function FacultyHeader({ title, subtitle, toggleMobileSidebar, un
                       }}
                       style={{
                         padding: '0.75rem 1rem',
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
+                        borderBottom: '1px solid var(--border-subtle)',
                         cursor: 'pointer',
                         transition: 'background 0.15s ease',
-                        background: n.isRead ? 'transparent' : 'rgba(99, 102, 241, 0.06)'
+                        background: n.isRead ? 'transparent' : 'rgba(99, 102, 241, 0.08)'
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)')}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--table-row-hover)')}
                       onMouseLeave={(e) =>
-                        (e.currentTarget.style.background = n.isRead ? 'transparent' : 'rgba(99, 102, 241, 0.06)')
+                        (e.currentTarget.style.background = n.isRead ? 'transparent' : 'rgba(99, 102, 241, 0.08)')
                       }
                     >
                       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem' }}>
@@ -195,7 +199,7 @@ export default function FacultyHeader({ title, subtitle, toggleMobileSidebar, un
                           }}
                         />
                         <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: 600, fontSize: '0.82rem', color: '#fff' }}>{n.title}</div>
+                          <div style={{ fontWeight: 600, fontSize: '0.82rem', color: 'var(--text-heading)' }}>{n.title}</div>
                           <div
                             style={{
                               fontSize: '0.75rem',
@@ -217,7 +221,7 @@ export default function FacultyHeader({ title, subtitle, toggleMobileSidebar, un
                 style={{
                   padding: '0.6rem 1rem',
                   textAlign: 'center',
-                  background: 'rgba(0, 0, 0, 0.2)',
+                  background: 'var(--bg-modal-footer)',
                   borderTop: '1px solid var(--border-subtle)'
                 }}
               >
@@ -250,7 +254,7 @@ export default function FacultyHeader({ title, subtitle, toggleMobileSidebar, un
             gap: '0.75rem',
             padding: '0.4rem 0.85rem',
             borderRadius: '12px',
-            background: 'var(--bg-input)',
+            background: 'var(--bg-header-btn)',
             border: '1px solid var(--border-subtle)',
             cursor: 'pointer',
             transition: 'all 0.2s ease'
@@ -275,7 +279,7 @@ export default function FacultyHeader({ title, subtitle, toggleMobileSidebar, un
             {user?.name ? user.name.charAt(0).toUpperCase() : 'F'}
           </div>
           <div style={{ textAlign: 'left' }}>
-            <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff', lineHeight: 1.1 }}>
+            <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-heading)', lineHeight: 1.1 }}>
               {user?.name || 'Faculty Member'}
             </div>
             <div style={{ fontSize: '0.72rem', color: 'var(--primary-light)', fontWeight: 500 }}>

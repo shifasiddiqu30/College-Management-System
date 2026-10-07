@@ -1,14 +1,106 @@
 /* ==========================================================================
    AcademiaX - Premium Modern Design System
+   Dark Mode + Light Mode Dual Architecture
    ========================================================================== */
 
-:root {
+/* --------------------------------------------------------------------------
+   LIGHT MODE (Default Palette)
+   Requirement 3 & 6: Default to Light Mode for first-time visitors
+   Clean white/light backgrounds, navy blue, blue/purple accents
+   -------------------------------------------------------------------------- */
+:root,
+[data-theme="light"] {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f1f5f9;
+  --bg-card-subtle: #f8fafc;
+  --bg-input: #ffffff;
+  --bg-glass: rgba(255, 255, 255, 0.88);
+  --bg-header: rgba(255, 255, 255, 0.94);
+  --bg-header-btn: #f1f5f9;
+  --bg-sidebar: #ffffff;
+  --bg-sidebar-header: #ffffff;
+  --bg-sidebar-active: linear-gradient(90deg, rgba(79, 70, 229, 0.12), rgba(79, 70, 229, 0.03));
+  --bg-modal: #ffffff;
+  --bg-modal-footer: #f8fafc;
+  --bg-dropdown: #ffffff;
+
+  --border-subtle: #e2e8f0;
+  --border-focus: rgba(79, 70, 229, 0.6);
+  --border-accent: rgba(79, 70, 229, 0.25);
+
+  --primary: #4f46e5;
+  --primary-light: #6366f1;
+  --primary-dark: #3730a3;
+  --primary-glow: rgba(79, 70, 229, 0.2);
+
+  --accent-cyan: #0891b2;
+  --accent-purple: #9333ea;
+  --accent-emerald: #059669;
+  --accent-amber: #d97706;
+  --accent-rose: #e11d48;
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --text-heading: #0f172a;
+  --text-inverse: #ffffff;
+
+  --table-th-bg: #f8fafc;
+  --table-row-hover: #f1f5f9;
+  --table-border: #e2e8f0;
+
+  --stat-icon-bg: rgba(79, 70, 229, 0.08);
+  --btn-secondary-bg: #f1f5f9;
+  --btn-secondary-border: #cbd5e1;
+  --btn-secondary-text: #0f172a;
+
+  --scrollbar-track: #f1f5f9;
+  --scrollbar-thumb: #cbd5e1;
+  --scrollbar-thumb-hover: #94a3b8;
+
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 4px 16px -2px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 12px 32px -4px rgba(15, 23, 42, 0.12);
+  --shadow-glow: 0 0 20px rgba(79, 70, 229, 0.15);
+
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: 'Outfit', var(--font-sans);
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
+  --transition-smooth: 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* --------------------------------------------------------------------------
+   DARK MODE PALETTE
+   Requirement 4: Dark navy/charcoal background, dark cards/panels, light text,
+   proper contrast, preserved accents, dark tables/inputs/dropdowns/modals/sidebars
+   -------------------------------------------------------------------------- */
+[data-theme="dark"] {
   --bg-primary: #090d16;
   --bg-secondary: #0f172a;
   --bg-card: rgba(17, 24, 39, 0.85);
   --bg-card-hover: rgba(30, 41, 59, 0.9);
+  --bg-card-subtle: rgba(255, 255, 255, 0.02);
   --bg-input: #131d31;
   --bg-glass: rgba(15, 23, 42, 0.75);
+  --bg-header: rgba(13, 19, 34, 0.85);
+  --bg-header-btn: rgba(255, 255, 255, 0.04);
+  --bg-sidebar: #0d1322;
+  --bg-sidebar-header: #0d1322;
+  --bg-sidebar-active: linear-gradient(90deg, rgba(99, 102, 241, 0.18), rgba(99, 102, 241, 0.04));
+  --bg-modal: #0f172a;
+  --bg-modal-footer: rgba(0, 0, 0, 0.25);
+  --bg-dropdown: #0f172a;
 
   --border-subtle: rgba(255, 255, 255, 0.08);
   --border-focus: rgba(99, 102, 241, 0.6);
@@ -28,28 +120,31 @@
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
+  --text-heading: #ffffff;
   --text-inverse: #0f172a;
 
-  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-heading: 'Outfit', var(--font-sans);
-  --font-mono: 'JetBrains Mono', monospace;
+  --table-th-bg: rgba(15, 23, 42, 0.6);
+  --table-row-hover: rgba(255, 255, 255, 0.025);
+  --table-border: rgba(255, 255, 255, 0.08);
 
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
-  --radius-full: 9999px;
+  --stat-icon-bg: rgba(255, 255, 255, 0.04);
+  --btn-secondary-bg: rgba(255, 255, 255, 0.05);
+  --btn-secondary-border: var(--border-subtle);
+  --btn-secondary-text: var(--text-primary);
+
+  --scrollbar-track: var(--bg-primary);
+  --scrollbar-thumb: #1e293b;
+  --scrollbar-thumb-hover: #334155;
 
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
   --shadow-md: 0 8px 24px -4px rgba(0, 0, 0, 0.35);
   --shadow-lg: 0 16px 40px -8px rgba(0, 0, 0, 0.5);
   --shadow-glow: 0 0 25px rgba(99, 102, 241, 0.2);
-
-  --transition-fast: 0.15s ease;
-  --transition-normal: 0.25s ease;
-  --transition-smooth: 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* --------------------------------------------------------------------------
+   Base Styles & Reset
+   -------------------------------------------------------------------------- */
 * {
   margin: 0;
   padding: 0;
@@ -73,6 +168,7 @@ html, body {
   padding-bottom: env(safe-area-inset-bottom, 0);
   padding-left: env(safe-area-inset-left, 0);
   padding-right: env(safe-area-inset-right, 0);
+  transition: background-color var(--transition-normal), color var(--transition-normal);
 }
 
 /* Customized Scrollbar */
@@ -81,20 +177,20 @@ html, body {
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--bg-primary);
+  background: var(--scrollbar-track);
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: var(--scrollbar-thumb);
   border-radius: var(--radius-full);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* Typography Helpers */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
-  color: var(--text-primary);
+  color: var(--text-heading);
   font-weight: 700;
   letter-spacing: -0.02em;
 }
@@ -109,7 +205,7 @@ a {
   transition: color var(--transition-fast);
 }
 a:hover {
-  color: #fff;
+  color: var(--primary);
 }
 
 /* Layout Utilities */
@@ -117,6 +213,7 @@ a:hover {
   display: flex;
   min-height: 100vh;
   position: relative;
+  background-color: var(--bg-primary);
 }
 
 .admin-layout {
@@ -133,6 +230,7 @@ a:hover {
   min-width: 0;
   overflow-y: auto;
   height: 100vh;
+  background-color: var(--bg-primary);
 }
 
 .admin-content {
@@ -164,6 +262,7 @@ a:hover {
   min-width: 0;
   overflow-y: auto;
   height: 100vh;
+  background-color: var(--bg-primary);
 }
 
 .faculty-content {
@@ -195,6 +294,7 @@ a:hover {
   min-width: 0;
   overflow-y: auto;
   height: 100vh;
+  background-color: var(--bg-primary);
 }
 
 .student-content {
@@ -212,15 +312,15 @@ a:hover {
 }
 
 /* ==========================================================================
-   Admin Sidebar Navigation
+   Sidebar Navigation (Admin, Faculty, Student)
    ========================================================================== */
 .admin-sidebar {
   width: 280px;
-  background: #0d1322;
+  background: var(--bg-sidebar);
   border-right: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
-  transition: width var(--transition-smooth), transform var(--transition-smooth);
+  transition: width var(--transition-smooth), transform var(--transition-smooth), background-color var(--transition-normal);
   z-index: 50;
   position: sticky;
   top: 0;
@@ -234,6 +334,7 @@ a:hover {
   align-items: center;
   gap: 0.875rem;
   border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-sidebar-header);
 }
 
 .brand-logo-badge {
@@ -253,7 +354,7 @@ a:hover {
 .brand-info h2 {
   font-size: 1.15rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-heading);
   line-height: 1.2;
 }
 
@@ -298,13 +399,13 @@ a:hover {
 }
 
 .nav-link:hover {
-  color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-heading);
+  background: var(--table-row-hover);
 }
 
 .nav-link.active {
-  color: #fff;
-  background: linear-gradient(90deg, rgba(99, 102, 241, 0.18), rgba(99, 102, 241, 0.04));
+  color: var(--primary);
+  background: var(--bg-sidebar-active);
   font-weight: 600;
   border-left: 3px solid var(--primary);
 }
@@ -318,7 +419,7 @@ a:hover {
 }
 
 .nav-link.active svg {
-  color: var(--primary-light);
+  color: var(--primary);
 }
 
 .nav-badge {
@@ -326,8 +427,8 @@ a:hover {
   font-size: 0.72rem;
   padding: 0.15rem 0.5rem;
   border-radius: var(--radius-full);
-  background: rgba(99, 102, 241, 0.2);
-  color: var(--primary-light);
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--primary);
   font-weight: 600;
 }
 
@@ -345,7 +446,7 @@ a:hover {
   gap: 0.75rem;
   padding: 0.65rem 0.75rem;
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--bg-card-subtle);
   border: 1px solid var(--border-subtle);
 }
 
@@ -371,7 +472,7 @@ a:hover {
 .user-details .user-name {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #fff;
+  color: var(--text-heading);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -404,13 +505,18 @@ a:hover {
 }
 
 /* ==========================================================================
-   Admin Top Header
+   Header Top Bar
    ========================================================================== */
-.admin-header {
-  height: 72px;
-  background: rgba(13, 19, 34, 0.8);
+.admin-header,
+header {
+  background: var(--bg-header);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border-subtle);
+  transition: background-color var(--transition-normal), border-color var(--transition-normal);
+}
+
+.admin-header {
+  height: 72px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -429,7 +535,7 @@ a:hover {
 .header-title h1 {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-heading);
 }
 
 .header-title p {
@@ -479,7 +585,7 @@ a:hover {
   width: 40px;
   height: 40px;
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-header-btn);
   border: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
@@ -491,8 +597,8 @@ a:hover {
 }
 
 .header-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  background: var(--table-row-hover);
+  color: var(--text-heading);
 }
 
 .notification-dot {
@@ -509,6 +615,15 @@ a:hover {
 /* ==========================================================================
    Card System & Metric Stats
    ========================================================================== */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+  transition: background-color var(--transition-normal), border-color var(--transition-normal), box-shadow var(--transition-normal);
+}
+
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -525,9 +640,10 @@ a:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  transition: transform var(--transition-normal), border-color var(--transition-normal), box-shadow var(--transition-normal);
+  transition: transform var(--transition-normal), border-color var(--transition-normal), box-shadow var(--transition-normal), background-color var(--transition-normal);
   position: relative;
   overflow: hidden;
+  box-shadow: var(--shadow-sm);
 }
 
 .stat-card:hover {
@@ -558,7 +674,7 @@ a:hover {
   font-size: 2.1rem;
   font-weight: 800;
   font-family: var(--font-heading);
-  color: #fff;
+  color: var(--text-heading);
   line-height: 1.1;
 }
 
@@ -575,7 +691,7 @@ a:hover {
   width: 52px;
   height: 52px;
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--stat-icon-bg);
   border: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
@@ -598,6 +714,7 @@ a:hover {
   overflow: hidden;
   box-shadow: var(--shadow-sm);
   backdrop-filter: blur(10px);
+  transition: background-color var(--transition-normal), border-color var(--transition-normal);
 }
 
 .table-header-bar {
@@ -613,7 +730,7 @@ a:hover {
 .table-title h3 {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-heading);
 }
 
 .table-title p {
@@ -633,7 +750,7 @@ a:hover {
 }
 
 .data-table th {
-  background: rgba(15, 23, 42, 0.6);
+  background: var(--table-th-bg);
   padding: 0.875rem 1.25rem;
   font-weight: 600;
   font-size: 0.78rem;
@@ -655,7 +772,7 @@ a:hover {
 }
 
 .data-table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--table-row-hover);
 }
 
 .data-table tbody tr:last-child td {
@@ -686,7 +803,7 @@ a:hover {
 
 .cell-info .cell-name {
   font-weight: 600;
-  color: #fff;
+  color: var(--text-heading);
 }
 
 .cell-info .cell-sub {
@@ -749,11 +866,12 @@ a:hover {
   display: inline-block;
   padding: 0.15rem 0.5rem;
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-header-btn);
   border: 1px solid var(--border-subtle);
   color: var(--text-secondary);
   font-size: 0.75rem;
   margin: 0.15rem;
+  transition: all var(--transition-fast);
 }
 
 /* ==========================================================================
@@ -778,7 +896,7 @@ a:hover {
 .btn-primary {
   background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   color: #fff;
-  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 4px 14px var(--primary-glow);
 }
 .btn-primary:hover {
   background: linear-gradient(135deg, var(--primary-light), var(--primary));
@@ -787,13 +905,13 @@ a:hover {
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: var(--border-subtle);
-  color: var(--text-primary);
+  background: var(--btn-secondary-bg);
+  border: 1px solid var(--btn-secondary-border);
+  color: var(--btn-secondary-text);
 }
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.15);
+  background: var(--table-row-hover);
+  border-color: var(--border-accent);
 }
 
 .btn-danger {
@@ -811,7 +929,7 @@ a:hover {
   height: 32px;
   padding: 0;
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-header-btn);
   border: 1px solid var(--border-subtle);
   color: var(--text-secondary);
   display: inline-flex;
@@ -821,8 +939,8 @@ a:hover {
   transition: all var(--transition-fast);
 }
 .btn-icon:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  background: var(--table-row-hover);
+  color: var(--text-heading);
 }
 .btn-icon.btn-icon-danger:hover {
   background: rgba(244, 63, 94, 0.15);
@@ -851,16 +969,17 @@ a:hover {
 .toolbar-search input {
   width: 100%;
   padding: 0.65rem 1rem 0.65rem 2.5rem;
-  background: var(--bg-card);
+  background: var(--bg-input);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  color: #fff;
+  color: var(--text-primary);
   font-size: 0.875rem;
   outline: none;
-  transition: border-color var(--transition-fast);
+  transition: border-color var(--transition-fast), background-color var(--transition-normal);
 }
 .toolbar-search input:focus {
   border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 .toolbar-search svg {
   position: absolute;
@@ -881,14 +1000,14 @@ a:hover {
 
 .filter-select {
   padding: 0.65rem 1.875rem 0.65rem 1rem;
-  background: var(--bg-card);
+  background-color: var(--bg-input);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  color: var(--text-secondary);
+  color: var(--text-primary);
   font-size: 0.85rem;
   outline: none;
   cursor: pointer;
-  transition: border-color var(--transition-fast);
+  transition: border-color var(--transition-fast), background-color var(--transition-normal);
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
   background-repeat: no-repeat;
@@ -897,7 +1016,6 @@ a:hover {
 }
 .filter-select:focus {
   border-color: var(--primary);
-  color: #fff;
 }
 
 /* ==========================================================================
@@ -909,7 +1027,7 @@ a:hover {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(4, 7, 14, 0.75);
+  background: rgba(4, 7, 14, 0.65);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
@@ -920,15 +1038,17 @@ a:hover {
 }
 
 .modal-content {
-  background: #0f172a;
+  background: var(--bg-modal);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
+  color: var(--text-primary);
   width: 100%;
   max-width: 580px;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: var(--shadow-lg);
   animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background-color var(--transition-normal), border-color var(--transition-normal);
 }
 
 .modal-header {
@@ -942,11 +1062,12 @@ a:hover {
 .modal-header h3 {
   font-size: 1.2rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-heading);
 }
 
 .modal-body {
   padding: 1.5rem;
+  color: var(--text-secondary);
 }
 
 .modal-footer {
@@ -956,7 +1077,7 @@ a:hover {
   justify-content: flex-end;
   gap: 0.75rem;
   border-top: 1px solid var(--border-subtle);
-  background: rgba(0, 0, 0, 0.15);
+  background: var(--bg-modal-footer);
 }
 
 .form-grid {
@@ -981,19 +1102,24 @@ a:hover {
   color: var(--text-secondary);
 }
 
-.form-input, .form-select, .form-textarea {
+.form-input, .form-select, .form-textarea, .form-control {
   width: 100%;
   padding: 0.65rem 0.875rem;
   border-radius: var(--radius-md);
   background: var(--bg-input);
   border: 1px solid var(--border-subtle);
-  color: #fff;
+  color: var(--text-primary);
   font-size: 0.875rem;
   outline: none;
   transition: all var(--transition-fast);
 }
 
-.form-input:focus, .form-select:focus, .form-textarea:focus {
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus, .form-control:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
@@ -1024,9 +1150,9 @@ a:hover {
   gap: 0.75rem;
   padding: 0.875rem 1.25rem;
   border-radius: var(--radius-md);
-  background: #111827;
+  background: var(--bg-modal);
   border: 1px solid var(--border-subtle);
-  color: #fff;
+  color: var(--text-primary);
   font-size: 0.875rem;
   box-shadow: var(--shadow-lg);
   animation: slideInRight 0.25s ease-out;
@@ -1042,6 +1168,119 @@ a:hover {
 
 .toast-info {
   border-left: 4px solid var(--primary);
+}
+
+/* ==========================================================================
+   Theme Adaptability Overrides for Existing Pages & Sub-Dashboards
+   ========================================================================== */
+[data-theme="light"] aside {
+  background: var(--bg-sidebar) !important;
+  border-right: 1px solid var(--border-subtle) !important;
+}
+
+[data-theme="light"] aside h2,
+[data-theme="light"] aside .user-name,
+[data-theme="light"] aside button,
+[data-theme="light"] aside div[style*="fontWeight: 800"],
+[data-theme="light"] aside div[style*="font-weight: 800"] {
+  color: var(--text-heading) !important;
+}
+
+[data-theme="light"] aside button:hover {
+  background: var(--table-row-hover) !important;
+}
+
+/* Modal and Dark Box overrides for Light Mode */
+[data-theme="light"] .modal-content,
+[data-theme="light"] div[style*="background: #0d1527"],
+[data-theme="light"] div[style*="background: rgb(13, 21, 39)"],
+[data-theme="light"] div[style*="background: rgba(15, 23, 42"],
+[data-theme="light"] div[style*="background: #0f172a"],
+[data-theme="light"] div[style*="background: rgb(15, 23, 42)"] {
+  background: var(--bg-card) !important;
+  border-color: var(--border-subtle) !important;
+  color: var(--text-primary) !important;
+  box-shadow: var(--shadow-sm);
+}
+
+[data-theme="light"] div[style*="background: #0d1527"] h3,
+[data-theme="light"] div[style*="background: #0d1527"] h4,
+[data-theme="light"] div[style*="background: #0d1527"] strong,
+[data-theme="light"] div[style*="background: rgb(13, 21, 39)"] h3,
+[data-theme="light"] div[style*="background: rgb(13, 21, 39)"] h4,
+[data-theme="light"] div[style*="background: rgba(15, 23, 42"] h3,
+[data-theme="light"] div[style*="background: rgba(15, 23, 42"] h4,
+[data-theme="light"] div[style*="background: rgba(15, 23, 42"] h2,
+[data-theme="light"] div[style*="background: rgba(15, 23, 42"] strong,
+[data-theme="light"] div[style*="background: #0f172a"] h3,
+[data-theme="light"] div[style*="background: #0f172a"] h4,
+[data-theme="light"] div[style*="background: #0f172a"] strong {
+  color: var(--text-heading) !important;
+}
+
+[data-theme="light"] div[style*="background: rgba(15, 23, 42"] p,
+[data-theme="light"] div[style*="background: #0f172a"] p {
+  color: var(--text-secondary) !important;
+}
+
+/* Ensure inputs and selects inside dark-styled cards adapt */
+[data-theme="light"] select,
+[data-theme="light"] input:not([type="submit"]):not([type="button"]):not([type="checkbox"]):not([type="radio"]),
+[data-theme="light"] textarea {
+  background-color: var(--bg-input) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+[data-theme="light"] select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+[data-theme="dark"] select option {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+}
+
+/* Table light mode adaptivity */
+[data-theme="light"] thead tr,
+[data-theme="light"] tr[style*="background: rgba(255, 255, 255, 0.04)"] {
+  background: var(--table-th-bg) !important;
+}
+
+[data-theme="light"] thead th {
+  color: var(--text-muted) !important;
+  background: var(--table-th-bg) !important;
+  border-bottom: 1px solid var(--border-subtle) !important;
+}
+
+[data-theme="light"] td[style*="color: #fff"],
+[data-theme="light"] span[style*="color: #fff"] {
+  color: var(--text-heading) !important;
+}
+
+[data-theme="light"] td[style*="color: #cbd5e1"] {
+  color: var(--text-secondary) !important;
+}
+
+/* Theme Toggle Button */
+.theme-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.theme-toggle-btn:hover {
+  background: var(--table-row-hover) !important;
+  border-color: var(--border-focus) !important;
+  box-shadow: var(--shadow-sm);
+  transform: scale(1.05);
+}
+
+.theme-toggle-btn:active {
+  transform: scale(0.95);
 }
 
 /* ==========================================================================
@@ -1142,4 +1381,3 @@ a:hover {
     font-size: 0.8rem;
   }
 }
-
